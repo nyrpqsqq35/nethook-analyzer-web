@@ -1,0 +1,29 @@
+$sky_blue: #74b8fc;
+$default: #4580c4;
+$blue: #0045ac;
+$cyan: #31cece;
+$green: #15a600;
+$green2: #98d937;
+$yellow: #fadc0e;
+$orange: #ff9900;
+$red: #ce0f0f;
+$pink: #ff0099;
+$light_pink: #fcc7f8;
+$purple: #6f3ca2;
+$mauve: #8c5a94;
+$coffee: #95814a;
+$maroon: #501b1b;
+$graphite: #555555;
+$white: #fbfbfb;
+
+$colors: (
+  'default': (
+    $sky_blue,
+  ),
+  'red': (
+    $red,
+  ),
+  'purple': (
+    $purple,
+  ),
+);

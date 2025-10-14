@@ -1,0 +1,112 @@
+table {
+  border-collapse: separate;
+  // correct offset on first border spacing if desired
+  //margin-top: -10px;
+  border-spacing: 0px 0px;
+
+  $columnPadding: 8px;
+
+  thead {
+    tr {
+      height: 24px;
+      th {
+        height: 24px;
+        position: relative;
+        font-weight: normal;
+        color: #4a617b;
+        box-sizing: border-box;
+        user-select: none;
+        text-align: left;
+        border: 1px solid transparent;
+        padding: 0 0 0 $columnPadding !important;
+        &:not(:last-child) {
+          border-right: 1px solid #deebf7;
+          padding: 0 0 0 $columnPadding !important;
+        }
+        &:hover {
+          background: linear-gradient(#f0f8f8 50%, #f0f4f8 50%);
+          border-color: #e0e8f0;
+        }
+        &:active {
+          background: linear-gradient(#dee3ef 1px, #eff3f7 2px, #fffbff 3px);
+          border-color: #c6cfde;
+        }
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      height: 22px;
+      width: 100%;
+      td {
+        height: 22px;
+        border: 1px solid transparent;
+        border-style: solid none;
+        box-sizing: border-box;
+        $borderRadius: 3px;
+        padding: 0 0 0 $columnPadding !important;
+        &:first-child {
+          border-left-style: solid;
+          border-top-left-radius: $borderRadius;
+          border-bottom-left-radius: $borderRadius;
+        }
+        &:last-child {
+          border-right-style: solid;
+          border-top-right-radius: $borderRadius;
+          border-bottom-right-radius: $borderRadius;
+        }
+
+        &.gray,
+        .gray {
+          color: #6d6d6d;
+        }
+
+        &:not(:first-child) {
+          padding: 0 0 0 $columnPadding !important;
+        }
+      }
+      &:hover {
+        td {
+          border-color: #bdd7ff;
+        }
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.5),
+          rgba(184, 214, 251, 0.5) 60%,
+          rgba(184, 214, 251, 0.5) 90%,
+          rgba(255, 255, 255, 0.8)
+        );
+      }
+      &:focus,
+      &:focus-within,
+      &:active {
+        td {
+          border-color: #7ba2ce;
+        }
+        background: linear-gradient(
+          to bottom,
+          rgba(222, 239, 255, 0.5),
+          rgba(184, 214, 251, 0.9) 30%,
+          rgba(184, 214, 251, 0.9) 90%,
+          rgba(255, 255, 255, 0.9)
+        );
+      }
+
+      td {
+        user-select: none;
+      }
+    }
+  }
+}
+
+.resizer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 5px;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+}

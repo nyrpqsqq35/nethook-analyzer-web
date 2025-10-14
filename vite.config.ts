@@ -1,13 +1,19 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-import * as path from "node:path";
+import svgr from 'vite-plugin-svgr'
+import * as path from 'node:path'
 // https://vite.dev/config/
 export default defineConfig({
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "src"),
+      '@': path.resolve(import.meta.dirname, 'src'),
     },
   },
-  plugins: [react(), tailwindcss()],
+
+  css: {
+    modules: {
+      localsConvention: 'camelCase',
+    },
+  },
+  plugins: [react(), svgr()],
 })

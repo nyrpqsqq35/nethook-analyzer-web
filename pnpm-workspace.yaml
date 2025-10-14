@@ -1,2 +1,4 @@
 onlyBuiltDependencies:
+  - '@bufbuild/buf'
+  - '@parcel/watcher'
   - '@tailwindcss/oxide'

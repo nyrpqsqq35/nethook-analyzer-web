@@ -1,6 +1,6 @@
-import { Transition } from '@headlessui/react'
-import { CheckCircleIcon, ExclamationCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
-import { XMarkIcon } from '@heroicons/react/20/solid'
+// import { Transition } from '@headlessui/react'
+// import { CheckCircleIcon, ExclamationCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
+// import { XMarkIcon } from '@heroicons/react/20/solid'
 import { type Toast, toast, useToaster } from 'react-hot-toast/headless'
 import clsx from 'clsx'
 

@@ -1,0 +1,11 @@
+.context-menu {
+  $zIndex: 5000;
+  position: absolute;
+
+  animation-duration: 100ms;
+  z-index: $zIndex;
+
+  &.current {
+    z-index: $zIndex + 1;
+  }
+}

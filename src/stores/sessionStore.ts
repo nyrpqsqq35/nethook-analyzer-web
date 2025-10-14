@@ -2,16 +2,53 @@ import { create } from 'zustand/react'
 import { devtools } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { toast } from 'react-hot-toast/headless'
-
+import { useShallow } from 'zustand/react/shallow'
+import { EMsg_Enum } from '@/lib/steam-types.ts'
+import { Buffer } from '@/lib/Buffer.ts'
+import { EMsg } from '@/proto/steam/enums_clientserver_pb.ts'
+import { type CMsgProtoBufHeader, CMsgProtoBufHeaderSchema } from '@/proto/steam/steammessages_base_pb.ts'
+import { fromBinary } from '@bufbuild/protobuf'
+import { getProtoFromEMsg } from '@/proto/steam.ts'
 export type Direction = 'in' | 'out'
 
+export interface ParsedMessageIsProtobuf {
+  eMsg: number
+  isProtobuf: true
+  headerSize: number
+  header: CMsgProtoBufHeader
+}
+export interface ParsedMessageIsntProtobuf {
+  eMsg: number
+  isProtobuf: false
+  headerSize: number
+  header: {
+    headerVersion?: number
+    targetJobId: bigint
+    sourceJobId: bigint
+    headerCanary?: number
+    steamId?: bigint
+    sessionId?: number
+  }
+}
+type Without<T, U> = {
+  [P in Exclude<keyof T, keyof U>]?: never
+}
+type XOR<T, U> = T extends object ? (U extends object ? (Without<T, U> & U) | (Without<U, T> & T) : T | U) : T | U
+export type ParsedMessage = XOR<ParsedMessageIsProtobuf, ParsedMessageIsntProtobuf>
+export interface ParsedBody {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any
+}
 export interface NetHookMessage {
   seq: number
   direction: Direction
   eMsg: number
   eMsgName: string
+  innerMsgName?: string
   file: FileSystemFileHandle
   data?: Uint8Array
+  parsed: ParsedMessage
+  body: ParsedBody | null
 }
 
 export interface NetHookSession {
@@ -36,7 +73,7 @@ export const useSessionStore = create<SessionState>()(
 function createSession(dir: FileSystemDirectoryHandle) {
   useSessionStore.setState((s) => {
     s.session = {
-      name: 'idk',
+      name: dir.name,
       dir,
       messages: {},
     }
@@ -61,7 +98,76 @@ function explodeName(fileName: string): NameParts {
     parts.eMsgName = name.join('_').replace('.bin', '')
   }
 
+  parts.eMsgName = EMsg_Enum.keyToName[parts.eMsg] ?? parts.eMsgName ?? 'UNKNOWN'
+
   return parts
+}
+
+// const JOBID_NONE = '18446744073709551615'
+const PROTO_MASK = 0x80000000
+
+function parseMessageHeader(ab: ArrayBuffer): ParsedMessage {
+  const buf = Buffer.from(ab)
+
+  const maskedEMsg = buf.readUint32()
+  const eMsg = maskedEMsg & ~PROTO_MASK
+  const isProtobuf = !!(maskedEMsg & PROTO_MASK)
+
+  if (eMsg == EMsg.k_EMsgChannelEncryptRequest || eMsg == EMsg.k_EMsgChannelEncryptResponse) {
+    const targetJobId = buf.readUint64()
+    const sourceJobId = buf.readUint64()
+    return {
+      eMsg,
+      isProtobuf: false,
+      headerSize: buf.bytesRead(),
+      header: {
+        targetJobId,
+        sourceJobId,
+      },
+    }
+  } else if (isProtobuf) {
+    const headerSize = buf.readUint32()
+    const header = fromBinary(CMsgProtoBufHeaderSchema, buf.readBytes(headerSize), {
+      readUnknownFields: true,
+    })
+    console.log('decoded header', header)
+    return {
+      eMsg,
+      isProtobuf: true,
+      headerSize: buf.bytesRead(),
+      header,
+    }
+  } else {
+    // const headerSize = buf.readUint8() // = 36
+    const headerVersion = buf.readUint16() // = 2
+    const targetJobId = buf.readUint64()
+    const sourceJobId = buf.readUint64()
+    const headerCanary = buf.readUint8() // = 239
+    const steamId = buf.readUint64()
+    const sessionId = buf.readUint32()
+
+    return {
+      eMsg,
+      isProtobuf: false,
+      headerSize: buf.bytesRead(),
+      header: {
+        headerVersion,
+        targetJobId,
+        sourceJobId,
+        headerCanary,
+        steamId,
+        sessionId,
+      },
+    }
+  }
+}
+function parseMessageBody(eMsg: number, eMsgName: string, ab: Uint8Array): ParsedBody | null {
+  const desc = getProtoFromEMsg(eMsg, eMsgName)
+  if (!desc) return null
+  const data = fromBinary(desc, ab, {
+    readUnknownFields: true,
+  })
+  return { data }
 }
 
 export async function openDirectoryPicker() {
@@ -96,7 +202,15 @@ export async function reloadSessionFiles() {
     // yeah
     const parts = explodeName(name)
     if (session.messages[parts.seq]) continue
-    newItems.push({ ...parts, file })
+    // if (parts.seq === 13) {
+    const fo = await file.getFile()
+    const ab = await fo.arrayBuffer()
+    const parsed = parseMessageHeader(ab)
+    const body = parseMessageBody(parts.eMsg, parts.eMsgName, new Uint8Array(ab.slice(parsed.headerSize)))
+    console.log('Parsed', parsed, body)
+
+    // }
+    newItems.push({ ...parts, file, parsed, body })
   }
 
   console.log('hola', newItems.length)
@@ -115,4 +229,8 @@ export function setSelectedMessage(seq: number) {
       s.session.selectedSeq = seq
     }
   })
+}
+
+export function useMessageBySeq(seq: number) {
+  return useSessionStore(useShallow((s) => s.session?.messages[seq]))
 }
