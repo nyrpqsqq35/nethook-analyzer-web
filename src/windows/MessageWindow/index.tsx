@@ -6,7 +6,7 @@ import { CMsgProtoBufHeaderSchema } from '@/proto/steam/steammessages_base_pb.ts
 import type { GenMessage } from '@bufbuild/protobuf/codegenv2'
 import type { DescEnum, DescField, DescMessage, DescOneof, Message } from '@bufbuild/protobuf'
 import { ScalarType } from '@bufbuild/protobuf'
-import { createRef, forwardRef, useMemo } from 'react'
+import { createRef, useMemo } from 'react'
 import { getProtoFromEMsg } from '@/proto/steam.ts'
 import {
   type DisplayAsSteamID,
@@ -148,7 +148,7 @@ function RenderItem({
           </li>
         )
       } else if (da === 'gid') {
-        return <RenderAsGlobalID value={value} label={fieldName} onContextMenu={onContextMenu} ref={valueRef} />
+        return <RenderAsGlobalID value={value} label={fieldName} onContextMenu={onContextMenu} />
       }
     }
     return (
