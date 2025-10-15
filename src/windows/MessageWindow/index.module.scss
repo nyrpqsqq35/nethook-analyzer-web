@@ -1,0 +1,11 @@
+.proto-listItem {
+  display: flex;
+  flex-direction: row;
+  gap: 0.25em;
+}
+
+.tree-view {
+  * > li {
+    user-select: none;
+  }
+}

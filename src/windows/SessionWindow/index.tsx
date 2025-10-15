@@ -115,7 +115,13 @@ function MessageTable({ session }: { session: NetHookSession }) {
 export function Preferences() {
   const preferences = usePreferencesStore()
   return (
-    <GroupBox label="Preferences">
+    <GroupBox
+      label="Preferences"
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+      }}
+    >
       <Checkbox
         name="hideDefaultFields"
         setChecked={(val) => {
@@ -125,6 +131,16 @@ export function Preferences() {
         }}
         label="Hide default fields"
         checked={preferences.hideDefaultFields}
+      />
+      <Checkbox
+        name="qualifiedTypeNames"
+        setChecked={(val) => {
+          usePreferencesStore.setState({
+            qualifiedTypeNames: val,
+          })
+        }}
+        label="Qualified type names"
+        checked={preferences.qualifiedTypeNames}
       />
     </GroupBox>
   )

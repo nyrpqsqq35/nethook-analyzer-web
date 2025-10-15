@@ -35,6 +35,7 @@
     "react-tooltip": "^5.30.0",
     "react-transition-group": "^4.4.5",
     "rooks": "^9.3.0",
+    "steamid": "^2.1.0",
     "superjson": "^2.2.2",
     "zustand": "^5.0.8"
   },
