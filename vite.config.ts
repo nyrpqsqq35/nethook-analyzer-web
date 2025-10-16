@@ -4,7 +4,7 @@ import svgr from 'vite-plugin-svgr'
 import * as path from 'node:path'
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.GITHUB_PUBLIC_CI_BUILD ? '/nethook-web-analyzer/' : '/',
+  base: process.env.GITHUB_PUBLIC_CI_BUILD ? '/nethook-analyzer-web/' : '/',
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),
