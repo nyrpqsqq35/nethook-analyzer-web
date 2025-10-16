@@ -5,7 +5,7 @@ import { usePreviousDifferent } from 'rooks'
 import { useWindowSize } from '@react-hook/window-size'
 
 import style from './window.module.scss'
-import { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import Handle from './handle.svg?react'
 import {
   useWindows,
@@ -21,6 +21,7 @@ import {
 } from '@/stores/useWindows'
 import { ColorWheelIcon } from '../Icon/silk'
 import { useShallow } from 'zustand/react/shallow'
+import { createPortal } from 'react-dom'
 
 type Color = 'default' | 'red' | 'purple'
 
@@ -58,6 +59,37 @@ const TITLEBAR_HEIGHT = 28 // px
 const WINDOW_PADDING = 10 // px
 
 const DIALOG_ZINDEX_BASE = 1000
+
+const WindowBody = React.memo<{
+  id: string
+  children: React.ReactNode
+  ghost?: boolean
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+}>(
+  function WindowBody({ children, ghost = false, x, y, width, height }) {
+    return (
+      <div
+        className={clsx('window-body', { [style.ghost]: ghost })}
+        style={
+          ghost
+            ? {
+                position: 'absolute',
+                transform: `translate(${x!}px, ${y! + TITLEBAR_HEIGHT + 2}px)`,
+                width: width! - WINDOW_PADDING,
+                height: height! - TITLEBAR_HEIGHT - 2,
+              }
+            : undefined
+        }
+      >
+        {children}
+      </div>
+    )
+  },
+  (prev, next) => prev.ghost === next.ghost && prev.children === next.children,
+)
 
 export function Window({
   id,
@@ -194,6 +226,9 @@ export function Window({
 
   const onWindowMouseDown = () => focusWindow(window)
 
+  const [isDragging, setIsDragging] = useState(false)
+  const portalContainer = document.body
+
   return (
     <>
       <Rnd
@@ -227,15 +262,21 @@ export function Window({
           },
         }}
         cancel="button"
-        onDragStop={(_, d) => setDimensions((e) => ({ ...e, x: d.x, y: d.y }))}
-        onResizeStop={(_, _direction, ref, _delta, position) =>
+        onDragStart={() => setIsDragging(true)}
+        onResizeStart={() => setIsDragging(true)}
+        onDragStop={(_, d) => {
+          setIsDragging(false)
+          setDimensions((e) => ({ ...e, x: d.x, y: d.y }))
+        }}
+        onResizeStop={(_, _direction, ref, _delta, position) => {
+          setIsDragging(false)
           setDimensions((e) => ({
             ...e,
             ...position,
             width: parseInt(ref.style.width, 10), // please be px
             height: parseInt(ref.style.height, 10),
           }))
-        }
+        }}
         minWidth={realMinWidth}
         minHeight={realMinHeight}
         enableResizing={resizable}
@@ -255,7 +296,8 @@ export function Window({
             </div>
           )}
         </div>
-        <div className="window-body">{children}</div>
+
+        {isDragging ? <div className="window-body"></div> : <WindowBody id={id}>{children}</WindowBody>}
       </Rnd>
       {window.isDialog && isForeground && (
         <div
@@ -268,6 +310,13 @@ export function Window({
           }}
         />
       )}
+      {isDragging &&
+        createPortal(
+          <WindowBody id={id} ghost x={x} y={y} width={width} height={height}>
+            {children}
+          </WindowBody>,
+          portalContainer,
+        )}
     </>
   )
 }

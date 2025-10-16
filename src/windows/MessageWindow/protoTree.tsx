@@ -25,6 +25,28 @@ import { type ContextMenuSchema, showContextMenu } from '@/stores/useContextMenu
 import { copyToClipboard } from '@/lib/clipboard.ts'
 import clsx from 'clsx'
 import style from '@/windows/MessageWindow/index.module.scss'
+import {
+  CSOEconEquipSlotSchema,
+  CSOEconGameAccountClientSchema,
+  CSOEconItemSchema,
+  CSOEconRentalHistorySchema,
+} from '@/proto/csgo/base_gcmessages_pb.ts'
+import SoItem from '@/windows/MessageWindow/soitem.tsx'
+import {
+  CSOAccountItemPersonalStoreSchema,
+  CSOAccountKeychainRemoveToolChargesSchema,
+  CSOAccountRecurringMissionSchema,
+  CSOAccountRecurringSubscriptionSchema,
+  CSOAccountSeasonalOperationSchema,
+  CSOAccountXpShopBidsSchema,
+  CSOAccountXpShopSchema,
+  CSOEconCouponSchema,
+  CSOGameAccountSteamChinaSchema,
+  CSOPersonaDataPublicSchema,
+  CSOQuestProgressSchema,
+  CSOVolatileItemClaimedRewardsSchema,
+  CSOVolatileItemOfferSchema,
+} from '@/proto/csgo/cstrike15_gcmessages_pb.ts'
 
 type ValueRef = React.RefObject<HTMLSpanElement | null>
 
@@ -92,7 +114,7 @@ function RenderAsBytes({ value, displayAs, ref }: { value: Uint8Array; displayAs
   return <span ref={ref}>{rendered}</span>
 }
 
-function RenderItem({
+export function RenderItem({
   desc,
   hasValue,
   value,
@@ -214,7 +236,17 @@ function RenderItem({
   return <li>idk</li>
 }
 
-function ProtoItem({ member, hasValue, value }: { member: DescField | DescOneof; hasValue: boolean; value: any }) {
+function ProtoItem({
+  member,
+  hasValue,
+  value,
+  odata,
+}: {
+  member: DescField | DescOneof
+  hasValue: boolean
+  value: any
+  odata: any
+}) {
   const { hideDefaultFields, qualifiedTypeNames } = usePreferencesStore(
     useShallow((a) => ({
       hideDefaultFields: a.hideDefaultFields,
@@ -347,6 +379,7 @@ function ProtoItem({ member, hasValue, value }: { member: DescField | DescOneof;
         hasValue = length > 0
         let desc: DescEnum | ScalarType | DescMessage
         let listType = 'List<'
+
         switch (member.listKind) {
           case 'enum':
             desc = member.enum
@@ -363,25 +396,64 @@ function ProtoItem({ member, hasValue, value }: { member: DescField | DescOneof;
         }
         listType += '>'
         if (hideDefaultFields && !hasValue) return <></>
+
+        if (member.parent.typeName === 'CMsgSOCacheSubscribed.SubscribedType' && member.name === 'object_data') {
+          // console.log('Yoooo....', member, hasValue, value, odata)
+          /// TODO: these are CSGO specific ......
+          const typeIdsToSchemas = {
+            1: CSOEconItemSchema,
+            2: CSOPersonaDataPublicSchema,
+            3: CSOEconEquipSlotSchema,
+            4: CSOAccountItemPersonalStoreSchema,
+            5: CSOEconRentalHistorySchema,
+            6: CSOAccountXpShopSchema,
+            7: CSOEconGameAccountClientSchema,
+            15: CSOAccountKeychainRemoveToolChargesSchema,
+            16: CSOAccountRecurringMissionSchema,
+            18: CSOGameAccountSteamChinaSchema,
+            19: CSOAccountXpShopBidsSchema,
+            20: CSOVolatileItemOfferSchema,
+            21: CSOVolatileItemClaimedRewardsSchema,
+            39: CSOAccountRecurringSubscriptionSchema,
+            40: CSOAccountSeasonalOperationSchema,
+            41: CSOAccountSeasonalOperationSchema,
+            45: CSOEconCouponSchema,
+            46: CSOQuestProgressSchema,
+          } as Record<number, DescMessage>
+          const foundSchema = typeIdsToSchemas[odata.typeId]
+          if (foundSchema) {
+            listType = `List<${foundSchema.name}>`
+            desc = foundSchema
+            // value = value.map((a) => fromBinary(CSOEconItemSchema, a, { readUnknownFields: true }))
+          }
+        }
+
         return (
           <li key={key} className={clsx({ gray: !hasValue })}>
             {label}
             {listType} (#{length}){' '}
             {Array.isArray(value) ? (
               <ul>
-                {value.map((item, idx) => (
-                  <RenderItem
-                    key={idx}
-                    desc={desc}
-                    hasValue={true}
-                    label={`[ ${idx} ]: `}
-                    value={item}
-                    fieldName={key}
-                    fieldKey={fieldKey}
-                    fieldPrefs={fieldPrefs}
-                    contextMenu={contextMenu}
-                  />
-                ))}
+                {value.map((item, idx) => {
+                  // @ts-expect-error yep
+                  if (item instanceof Uint8Array && desc?.kind === 'message') {
+                    // @ts-expect-error yep
+                    return <SoItem key={idx} desc={desc} value={item} label={`[ ${idx} ]: `} />
+                  }
+                  return (
+                    <RenderItem
+                      key={idx}
+                      desc={desc}
+                      hasValue={true}
+                      label={`[ ${idx} ]: `}
+                      value={item}
+                      fieldName={key}
+                      fieldKey={fieldKey}
+                      fieldPrefs={fieldPrefs}
+                      contextMenu={contextMenu}
+                    />
+                  )
+                })}
               </ul>
             ) : undefined}
           </li>
@@ -423,7 +495,7 @@ export function ProtoTree<T extends Message>({
         {Object.values(schema.members).map((member) => {
           const value = data[member.localName as keyof T]
           const hasValue = Object.getOwnPropertyNames(data).includes(member.localName)
-          return <ProtoItem key={member.localName} member={member} value={value} hasValue={hasValue} />
+          return <ProtoItem key={member.localName} member={member} value={value} hasValue={hasValue} odata={data} />
         })}
       </ul>
     </details>
