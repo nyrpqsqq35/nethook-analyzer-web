@@ -179,7 +179,7 @@ function RenderItem({
         return (
           <li className={className} onContextMenu={onContextMenu}>
             {label}
-            <RenderAsBytes value={value} displayAs={da} ref={valueRef} />
+            <RenderAsBytes value={value} displayAs={da as DisplayAsBytes} ref={valueRef} />
           </li>
         )
       }
