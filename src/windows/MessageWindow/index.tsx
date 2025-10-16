@@ -14,6 +14,7 @@ import GcTab from '@/windows/MessageWindow/gc.tsx'
 
 interface MessageWindowPropTypes extends ChildWindowPropTypes {
   seq: number
+  msg?: NetHookMessage
 }
 
 function StandardHeader({ parsed }: { parsed: ParsedMessageIsntProtobuf }) {
@@ -74,15 +75,20 @@ function Yeah({ msg }: { msg: NetHookMessage }) {
   )
 }
 
-export function MessageWindow({ id, seq }: MessageWindowPropTypes) {
-  const msg = useMessageBySeq(seq)
+export function MessageWindow({ id, seq, msg: maybeMsg }: MessageWindowPropTypes) {
+  const used = useMessageBySeq(maybeMsg ? -1 : seq)
+  const msg = maybeMsg ?? used
 
   // console.log('rerender')
 
   return (
     <Window
       id={id}
-      caption={`Message ${seq}${id === 'quick-message-window' ? '*' : ''}`}
+      caption={
+        maybeMsg
+          ? `Message ${maybeMsg.file.name}`
+          : `Message ${msg?.seq ?? seq}${id === 'quick-message-window' ? '*' : ''}`
+      }
       vConstraint={VConstraint.TOP}
       hConstraint={HConstraint.CENTER}
       minHeight={420}

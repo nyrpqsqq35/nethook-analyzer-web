@@ -1,7 +1,9 @@
 import clsx from 'clsx'
 import style from './index.module.scss'
 import { useState } from 'react'
-import { createSession, reloadSessionFiles } from '@/stores/sessionStore.ts'
+import { createSession, parseFile, reloadSessionFiles } from '@/stores/sessionStore.ts'
+import { createWindow, showMessageBox } from '@/stores/useWindows.tsx'
+import { MessageWindow } from '@/windows'
 
 export default function DropTarget(
   props: Omit<
@@ -46,7 +48,17 @@ export default function DropTarget(
               createSession(handle as FileSystemDirectoryHandle)
               await reloadSessionFiles()
             } else if (handle.kind === 'file') {
-              // TODO: open .bin file into MessageWindow
+              const msg = await parseFile(handle as FileSystemFileHandle)
+              if (msg) {
+                createWindow(MessageWindow, {
+                  props: {
+                    seq: -1,
+                    msg,
+                  },
+                })
+              } else {
+                showMessageBox('Error', `Failed to parse \`${handle.name}\``)
+              }
             }
           }
         }

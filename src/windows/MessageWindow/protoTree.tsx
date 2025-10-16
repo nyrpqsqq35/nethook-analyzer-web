@@ -18,7 +18,7 @@ import {
   usePreferencesStore,
 } from '@/stores/preferencesStore.ts'
 import { useShallow } from 'zustand/react/shallow'
-import { createRef, useMemo, useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import SteamID from 'steamid'
 import { GlobalID } from '@/lib/globalid.ts'
 import { type ContextMenuSchema, showContextMenu } from '@/stores/useContextMenu.tsx'

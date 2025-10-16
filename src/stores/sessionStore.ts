@@ -208,6 +208,35 @@ export async function openDirectoryPicker() {
     }
   }
 }
+
+export async function parseFile(file: FileSystemFileHandle): Promise<NetHookMessage | undefined> {
+  const name = file.name
+  if (!name.endsWith('.bin')) return
+  const parts = explodeName(name)
+  const fo = await file.getFile()
+  const ab = await fo.arrayBuffer()
+  const parsed = parseMessageHeader(ab)
+  const desc = getProtoFromEMsg(parts.eMsg, parts.eMsgName)
+  const body = parseMessageBody(desc, new Uint8Array(ab.slice(parsed.headerSize)))
+
+  const msg: NetHookMessage = { ...parts, file, parsed, body }
+  // console.log('Parsed', parsed, body)
+
+  if (body) {
+    if (parsed.eMsg === 5452 || parsed.eMsg === 5453) {
+      if (body?.data?.appid === 730) {
+        const maskedEMsg = body.data.msgtype
+        const eMsg = maskedEMsg & ~PROTO_MASK
+        const isProtobuf = !!(maskedEMsg & PROTO_MASK)
+        msg.innerMsgName = gcEMsgToName(eMsg)
+        msg.gcMessage = parseGcMessage(eMsg, msg.innerMsgName, isProtobuf, msg)
+        // gcEMsgToName()
+      }
+    }
+  }
+  return msg
+}
+
 export async function reloadSessionFiles() {
   const session = useSessionStore.getState().session
   if (!session) return
@@ -218,36 +247,11 @@ export async function reloadSessionFiles() {
 
   for await (const file of dir.values()) {
     if (file.kind !== 'file') continue
-    const name = file.name
-    if (!name.endsWith('.bin')) continue
-    // yeah
-    const parts = explodeName(name)
-    if (session.messages[parts.seq]) continue
-    // if (parts.seq === 13) {
-    const fo = await file.getFile()
-    const ab = await fo.arrayBuffer()
-    const parsed = parseMessageHeader(ab)
-    const desc = getProtoFromEMsg(parts.eMsg, parts.eMsgName)
-    const body = parseMessageBody(desc, new Uint8Array(ab.slice(parsed.headerSize)))
-
-    const msg: NetHookMessage = { ...parts, file, parsed, body }
-
-    if (body) {
-      if (parsed.eMsg === 5452 || parsed.eMsg === 5453) {
-        if (body?.data?.appid === 730) {
-          const maskedEMsg = body.data.msgtype
-          const eMsg = maskedEMsg & ~PROTO_MASK
-          const isProtobuf = !!(maskedEMsg & PROTO_MASK)
-          msg.innerMsgName = gcEMsgToName(eMsg)
-          msg.gcMessage = parseGcMessage(eMsg, msg.innerMsgName, isProtobuf, msg)
-          // gcEMsgToName()
-        }
-      }
+    const msg = await parseFile(file)
+    if (msg) {
+      if (session.messages[msg.seq]) return
+      newItems.push(msg)
     }
-    // console.log('Parsed', parsed, body)
-
-    // }
-    newItems.push(msg)
   }
 
   console.log('hola', newItems.length)
@@ -269,5 +273,10 @@ export function setSelectedMessage(seq: number) {
 }
 
 export function useMessageBySeq(seq: number) {
-  return useSessionStore(useShallow((s) => s.session?.messages[seq]))
+  return useSessionStore(
+    useShallow((s) => {
+      if (seq === -1) return undefined
+      return s.session?.messages[seq]
+    }),
+  )
 }

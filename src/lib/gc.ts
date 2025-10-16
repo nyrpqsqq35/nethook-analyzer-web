@@ -1,11 +1,9 @@
-import { csgoGcEnums, getProtoFromGCEMsg /*getProtoFromGCEMsg*/ } from '@/proto/csgo.ts'
+import { getProtoFromGCEMsg } from '@/proto/csgo.ts'
 import { type NetHookGcMessage, type NetHookMessage, type ParsedBody, parseMessageBody } from '@/stores/sessionStore.ts'
 import { Buffer } from '@/lib/Buffer.ts'
 import { fromBinary } from '@bufbuild/protobuf'
 import { CMsgProtoBufHeaderSchema } from '@/proto/steam/steammessages_base_pb.ts'
-import { EMsg } from '@/proto/steam/enums_clientserver_pb.ts'
 
-console.log('pd', csgoGcEnums)
 export function parseGcMessage(
   eMsg: number,
   eMsgName: string,
