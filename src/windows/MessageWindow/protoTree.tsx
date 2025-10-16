@@ -18,7 +18,7 @@ import {
   usePreferencesStore,
 } from '@/stores/preferencesStore.ts'
 import { useShallow } from 'zustand/react/shallow'
-import { createRef, useMemo } from 'react'
+import { createRef, useMemo, useRef } from 'react'
 import SteamID from 'steamid'
 import { GlobalID } from '@/lib/globalid.ts'
 import { type ContextMenuSchema, showContextMenu } from '@/stores/useContextMenu.tsx'
@@ -158,7 +158,7 @@ function RenderItem({
 
   const className = clsx(style.protoListItem, { gray: !hasValue })
   // for copying..
-  const valueRef = createRef<HTMLSpanElement>()
+  const valueRef = useRef<HTMLSpanElement>(null)
 
   if (typeof desc === 'number') {
     // Scalar type

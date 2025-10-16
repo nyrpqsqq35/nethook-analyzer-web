@@ -3,7 +3,7 @@ import { Window, type ChildWindowPropTypes } from '@/components/Window'
 import { HConstraint, setWindowDimensions, useWindows, VConstraint } from '@/stores/useWindows'
 import style from './index.module.scss'
 import clsx from 'clsx'
-import { createRef, useLayoutEffect } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 
 export interface MessageBoxWindowPropTypes extends ChildWindowPropTypes {
   caption: string
@@ -11,7 +11,7 @@ export interface MessageBoxWindowPropTypes extends ChildWindowPropTypes {
 }
 
 export function MessageBoxWindow({ id, caption, body, closeWindow }: MessageBoxWindowPropTypes) {
-  const ref = createRef<HTMLDivElement>()
+  const ref = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     if (ref.current) {
       console.log(ref.current.clientWidth, ref.current.clientHeight)
