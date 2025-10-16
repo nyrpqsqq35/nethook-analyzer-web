@@ -7,9 +7,12 @@ import { EMsg_Enum } from '@/lib/steam-types.ts'
 import { Buffer } from '@/lib/Buffer.ts'
 import { EMsg } from '@/proto/steam/enums_clientserver_pb.ts'
 import { type CMsgProtoBufHeader, CMsgProtoBufHeaderSchema } from '@/proto/steam/steammessages_base_pb.ts'
-import { fromBinary } from '@bufbuild/protobuf'
+import { type DescMessage, fromBinary } from '@bufbuild/protobuf'
 import { getProtoFromEMsg } from '@/proto/steam.ts'
 export type Direction = 'in' | 'out'
+
+import { gcEMsgToName } from '@/proto/csgo.ts'
+import { parseGcMessage } from '@/lib/gc.ts'
 
 export interface ParsedMessageIsProtobuf {
   eMsg: number
@@ -39,6 +42,16 @@ export interface ParsedBody {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any
 }
+
+export interface NetHookGcMessage {
+  eMsg: number
+  eMsgName: string
+  isProtobuf: boolean
+  parsed: ParsedMessage
+  body: ParsedBody | null
+  payload?: Uint8Array
+}
+
 export interface NetHookMessage {
   seq: number
   direction: Direction
@@ -49,6 +62,7 @@ export interface NetHookMessage {
   data?: Uint8Array
   parsed: ParsedMessage
   body: ParsedBody | null
+  gcMessage?: NetHookGcMessage
 }
 
 export interface NetHookSession {
@@ -68,9 +82,15 @@ export const useSessionStore = create<SessionState>()(
       // Comment so this is on its own line
       () => ({}),
     ),
+    {
+      serialize: {
+        // @ts-expect-error shh
+        replacer: (_key, value) => (typeof value === 'bigint' ? value.toString() : value),
+      },
+    },
   ),
 )
-function createSession(dir: FileSystemDirectoryHandle) {
+export function createSession(dir: FileSystemDirectoryHandle) {
   useSessionStore.setState((s) => {
     s.session = {
       name: dir.name,
@@ -107,7 +127,7 @@ function explodeName(fileName: string): NameParts {
 const PROTO_MASK = 0x80000000
 
 function parseMessageHeader(ab: ArrayBuffer): ParsedMessage {
-  const buf = Buffer.from(ab)
+  const buf = Buffer.from(ab, true, false)
 
   const maskedEMsg = buf.readUint32()
   const eMsg = maskedEMsg & ~PROTO_MASK
@@ -130,7 +150,7 @@ function parseMessageHeader(ab: ArrayBuffer): ParsedMessage {
     const header = fromBinary(CMsgProtoBufHeaderSchema, buf.readBytes(headerSize), {
       readUnknownFields: true,
     })
-    console.log('decoded header', header)
+    // console.log('decoded header', header)
     return {
       eMsg,
       isProtobuf: true,
@@ -138,13 +158,15 @@ function parseMessageHeader(ab: ArrayBuffer): ParsedMessage {
       header,
     }
   } else {
-    // const headerSize = buf.readUint8() // = 36
+    const headerSize = buf.readUint8() // = 36
     const headerVersion = buf.readUint16() // = 2
     const targetJobId = buf.readUint64()
     const sourceJobId = buf.readUint64()
     const headerCanary = buf.readUint8() // = 239
     const steamId = buf.readUint64()
     const sessionId = buf.readUint32()
+
+    void headerSize
 
     return {
       eMsg,
@@ -161,8 +183,7 @@ function parseMessageHeader(ab: ArrayBuffer): ParsedMessage {
     }
   }
 }
-function parseMessageBody(eMsg: number, eMsgName: string, ab: Uint8Array): ParsedBody | null {
-  const desc = getProtoFromEMsg(eMsg, eMsgName)
+export function parseMessageBody(desc: DescMessage | undefined, ab: Uint8Array): ParsedBody | null {
   if (!desc) return null
   const data = fromBinary(desc, ab, {
     readUnknownFields: true,
@@ -206,11 +227,27 @@ export async function reloadSessionFiles() {
     const fo = await file.getFile()
     const ab = await fo.arrayBuffer()
     const parsed = parseMessageHeader(ab)
-    const body = parseMessageBody(parts.eMsg, parts.eMsgName, new Uint8Array(ab.slice(parsed.headerSize)))
-    console.log('Parsed', parsed, body)
+    const desc = getProtoFromEMsg(parts.eMsg, parts.eMsgName)
+    const body = parseMessageBody(desc, new Uint8Array(ab.slice(parsed.headerSize)))
+
+    const msg: NetHookMessage = { ...parts, file, parsed, body }
+
+    if (body) {
+      if (parsed.eMsg === 5452 || parsed.eMsg === 5453) {
+        if (body?.data?.appid === 730) {
+          const maskedEMsg = body.data.msgtype
+          const eMsg = maskedEMsg & ~PROTO_MASK
+          const isProtobuf = !!(maskedEMsg & PROTO_MASK)
+          msg.innerMsgName = gcEMsgToName(eMsg)
+          msg.gcMessage = parseGcMessage(eMsg, msg.innerMsgName, isProtobuf, msg)
+          // gcEMsgToName()
+        }
+      }
+    }
+    // console.log('Parsed', parsed, body)
 
     // }
-    newItems.push({ ...parts, file, parsed, body })
+    newItems.push(msg)
   }
 
   console.log('hola', newItems.length)

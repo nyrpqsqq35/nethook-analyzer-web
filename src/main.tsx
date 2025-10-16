@@ -8,6 +8,11 @@ import 'animate.css'
 
 import '@/registry'
 
+// @ts-expect-error :((
+BigInt.prototype['toJSON'] = function () {
+  return this.toString()
+}
+
 createRoot(document.getElementById('root')!).render(
   // <StrictMode>
   <App />,

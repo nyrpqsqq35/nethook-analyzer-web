@@ -1,8 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { flexRender, getCoreRowModel, useReactTable, type Table, type ColumnDef, type Row } from '@tanstack/react-table'
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type Table,
+  type ColumnDef,
+  type Row,
+  type FilterFn,
+  getFilteredRowModel,
+} from '@tanstack/react-table'
 import { type CSSProperties, type MouseEventHandler, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { type ContextMenuSchema, showContextMenu } from '@/stores/useContextMenu.tsx'
+import { rankItem } from '@tanstack/match-sorter-utils'
+import { onGlobalFilterChange, useTableData } from '@/stores/useTableData.tsx'
 
 export interface TableItemProps<T = any> {
   contextMenu?: (row: T) => ContextMenuSchema | undefined
@@ -113,18 +124,39 @@ function VirtualTableBody<T>({
   )
 }
 
+const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+  const itemRank = rankItem(row.getValue(columnId), value)
+
+  addMeta({
+    itemRank,
+  })
+
+  return itemRank.passed
+}
+
 export default function Table<T>({
+  id,
   /*id, className, children,*/ data,
   columns,
   virtualized = false,
   containerStyle,
   itemProps,
 }: TablePropTypes<T>) {
+  const tableData = useTableData(id)
   const table = useReactTable({
     data,
     columns,
     columnResizeMode: 'onChange',
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
+    globalFilterFn: 'fuzzy',
+    state: {
+      globalFilter: tableData?.globalFilter ?? '',
+    },
+    onGlobalFilterChange: onGlobalFilterChange(id),
   })
 
   const tableContainerRef = useRef<HTMLDivElement>(null)

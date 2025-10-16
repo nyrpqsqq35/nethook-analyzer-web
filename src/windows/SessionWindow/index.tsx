@@ -1,16 +1,17 @@
 import { type ChildWindowPropTypes, Window } from '@/components/Window'
 import { createSingletonWindow, createWindow, HConstraint, VConstraint } from '@/stores/useWindows.tsx'
-import type { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef, FilterFn } from '@tanstack/react-table'
 import { type NetHookMessage, type NetHookSession, useSessionStore } from '@/stores/sessionStore.ts'
 import Table from '@/components/Table'
 import { useShallow } from 'zustand/react/shallow'
 import { ContextMenuSpecialItem } from '@/stores/useContextMenu.tsx'
 import { MessageWindow } from '@/windows/MessageWindow'
 import GroupBox from '@/components/GroupBox'
-import { Checkbox } from '@/components/Input'
+import { Checkbox, TextInput } from '@/components/Input'
 import { usePreferencesStore } from '@/stores/preferencesStore.ts'
 import { BlueFolderNetworkIcon } from '@/components/Icon/fugue.tsx'
-
+import { type RankingInfo } from '@tanstack/match-sorter-utils'
+import { onGlobalFilterChange, useTableData } from '@/stores/useTableData.tsx'
 const messageColumns: ColumnDef<NetHookMessage>[] = [
   {
     header: 'Seq',
@@ -18,6 +19,7 @@ const messageColumns: ColumnDef<NetHookMessage>[] = [
     cell: (info) => info.getValue(),
     minSize: 35,
     size: 35,
+    filterFn: 'equalsString',
   },
   {
     header: 'Direction',
@@ -25,18 +27,21 @@ const messageColumns: ColumnDef<NetHookMessage>[] = [
     cell: (info) => <span className="gray">{info.getValue() as string}</span>,
     minSize: 70,
     size: 70,
+    filterFn: 'equalsString',
   },
   {
     header: 'Message type',
     accessorKey: 'eMsgName',
     cell: (info) => <span className="gray">{info.getValue() as string}</span>,
     size: 400,
+    filterFn: 'fuzzy',
   },
   {
     header: 'Inner message',
     cell: (info) => <span className="gray">{info.getValue() as string}</span>,
     accessorKey: 'innerMsgName',
     size: 15000,
+    filterFn: 'fuzzy',
   },
 ]
 
@@ -44,6 +49,16 @@ const messageColumns: ColumnDef<NetHookMessage>[] = [
 //
 // const ascPredicate = (a: NetHookMessage, b: NetHookMessage) => (a.seq < b.seq ? 1 : -1),
 //   descPredicate = (a: NetHookMessage, b: NetHookMessage) => (a.seq > b.seq ? 1 : -1)
+
+declare module '@tanstack/react-table' {
+  //add fuzzy filter to the filterFns
+  interface FilterFns {
+    fuzzy: FilterFn<unknown>
+  }
+  interface FilterMeta {
+    itemRank: RankingInfo
+  }
+}
 
 function MessageTable({ session }: { session: NetHookSession }) {
   // const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
@@ -114,34 +129,46 @@ function MessageTable({ session }: { session: NetHookSession }) {
 
 export function Preferences() {
   const preferences = usePreferencesStore()
+  const tableData = useTableData('nethook-session-messages')
   return (
     <GroupBox
       label="Preferences"
       style={{
         display: 'flex',
         flexDirection: 'row',
+        margin: '4px 8px',
+        alignItems: 'center',
       }}
     >
-      <Checkbox
-        name="hideDefaultFields"
-        setChecked={(val) => {
-          usePreferencesStore.setState({
-            hideDefaultFields: val,
-          })
-        }}
-        label="Hide default fields"
-        checked={preferences.hideDefaultFields}
+      <TextInput
+        name="search"
+        type="search"
+        placeholder="Filter messages"
+        value={tableData?.globalFilter ?? ''}
+        onChange={onGlobalFilterChange('nethook-session-messages')}
       />
-      <Checkbox
-        name="qualifiedTypeNames"
-        setChecked={(val) => {
-          usePreferencesStore.setState({
-            qualifiedTypeNames: val,
-          })
-        }}
-        label="Qualified type names"
-        checked={preferences.qualifiedTypeNames}
-      />
+      <div style={{ display: 'flex', flexDirection: 'row', gap: '8px', marginLeft: 'auto', alignItems: 'center' }}>
+        <Checkbox
+          name="hideDefaultFields"
+          setChecked={(val) => {
+            usePreferencesStore.setState({
+              hideDefaultFields: val,
+            })
+          }}
+          label="Hide default fields"
+          checked={preferences.hideDefaultFields}
+        />
+        <Checkbox
+          name="qualifiedTypeNames"
+          setChecked={(val) => {
+            usePreferencesStore.setState({
+              qualifiedTypeNames: val,
+            })
+          }}
+          label="Qualified type names"
+          checked={preferences.qualifiedTypeNames}
+        />
+      </div>
     </GroupBox>
   )
 }

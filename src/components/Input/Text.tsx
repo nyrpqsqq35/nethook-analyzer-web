@@ -3,6 +3,10 @@ import { type InputPropTypes } from '.'
 
 export interface TextInputPropTypes extends InputPropTypes {
   type?: HTMLInputElement['type']
+  placeholder?: string
+
+  onChange?: (value: string) => void
+  value?: string
 }
 
 export function TextInput({
@@ -14,7 +18,9 @@ export function TextInput({
   stacked = false,
 
   type = 'text',
-
+  placeholder,
+  value,
+  onChange,
   as: As = 'div',
 }: TextInputPropTypes) {
   return (
@@ -25,7 +31,13 @@ export function TextInput({
       })}
     >
       <label htmlFor={id}>{label}</label>
-      <input id={id} type={type} />
+      <input
+        id={id}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+      />
     </As>
   )
 }
