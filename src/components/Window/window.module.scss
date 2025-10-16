@@ -10,6 +10,8 @@
     }
   }
 
+  will-change: transform;
+
   & {
     display: flex !important;
     flex-direction: column;

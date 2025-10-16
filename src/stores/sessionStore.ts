@@ -1,5 +1,5 @@
 import { create } from 'zustand/react'
-import { devtools } from 'zustand/middleware'
+// import { devtools } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { toast } from 'react-hot-toast/headless'
 import { useShallow } from 'zustand/react/shallow'
@@ -77,18 +77,18 @@ export interface SessionState {
 }
 
 export const useSessionStore = create<SessionState>()(
-  devtools(
-    immer(
-      // Comment so this is on its own line
-      () => ({}),
-    ),
-    {
-      serialize: {
-        // @ts-expect-error shh
-        replacer: (_key, value) => (typeof value === 'bigint' ? value.toString() : value),
-      },
-    },
+  // devtools(
+  immer(
+    // Comment so this is on its own line
+    () => ({}),
   ),
+  //   {
+  //     serialize: {
+  //       // @ts-expect-error shh
+  //       replacer: (_key, value) => (typeof value === 'bigint' ? value.toString() : value),
+  //     },
+  //   },
+  // ),
 )
 export function createSession(dir: FileSystemDirectoryHandle) {
   useSessionStore.setState((s) => {

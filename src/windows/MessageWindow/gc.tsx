@@ -8,6 +8,7 @@ import { getProtoFromGCEMsg } from '@/proto/csgo.ts'
 export default function GcTab({ msg }: { msg: NetHookMessage }) {
   const gcMsg = msg.gcMessage!
   const desc = useMemo(() => getProtoFromGCEMsg(gcMsg.eMsg, gcMsg.eMsgName), [gcMsg.eMsg, gcMsg.eMsgName])
+  console.log('GcTab rerender')
 
   return (
     <>

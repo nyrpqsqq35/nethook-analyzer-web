@@ -34,6 +34,8 @@ function StandardHeader({ parsed }: { parsed: ParsedMessageIsntProtobuf }) {
 }
 
 function Yeah({ msg }: { msg: NetHookMessage }) {
+  console.log('Yeah rerender')
+
   const desc = useMemo(() => getProtoFromEMsg(msg.eMsg, msg.eMsgName), [msg.eMsg, msg.eMsgName])
   return (
     <>
@@ -78,8 +80,6 @@ function Yeah({ msg }: { msg: NetHookMessage }) {
 export function MessageWindow({ id, seq, msg: maybeMsg }: MessageWindowPropTypes) {
   const used = useMessageBySeq(maybeMsg ? -1 : seq)
   const msg = maybeMsg ?? used
-
-  // console.log('rerender')
 
   return (
     <Window

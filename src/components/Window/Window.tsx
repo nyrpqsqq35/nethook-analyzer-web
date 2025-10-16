@@ -5,7 +5,7 @@ import { usePreviousDifferent } from 'rooks'
 import { useWindowSize } from '@react-hook/window-size'
 
 import style from './window.module.scss'
-import React, { useEffect, useState } from 'react'
+import React, { type Component, useEffect, useMemo } from 'react'
 import Handle from './handle.svg?react'
 import {
   useWindows,
@@ -21,7 +21,7 @@ import {
 } from '@/stores/useWindows'
 import { ColorWheelIcon } from '../Icon/silk'
 import { useShallow } from 'zustand/react/shallow'
-import { createPortal } from 'react-dom'
+import { createHtmlPortalNode, type HtmlPortalNode, InPortal, OutPortal } from 'react-reverse-portal'
 
 type Color = 'default' | 'red' | 'purple'
 
@@ -60,38 +60,7 @@ const WINDOW_PADDING = 10 // px
 
 const DIALOG_ZINDEX_BASE = 1000
 
-const WindowBody = React.memo<{
-  id: string
-  children: React.ReactNode
-  ghost?: boolean
-  x?: number
-  y?: number
-  width?: number
-  height?: number
-}>(
-  function WindowBody({ children, ghost = false, x, y, width, height }) {
-    return (
-      <div
-        className={clsx('window-body', { [style.ghost]: ghost })}
-        style={
-          ghost
-            ? {
-                position: 'absolute',
-                transform: `translate(${x!}px, ${y! + TITLEBAR_HEIGHT + 2}px)`,
-                width: width! - WINDOW_PADDING,
-                height: height! - TITLEBAR_HEIGHT - 2,
-              }
-            : undefined
-        }
-      >
-        {children}
-      </div>
-    )
-  },
-  (prev, next) => prev.ghost === next.ghost && prev.children === next.children,
-)
-
-export function Window({
+function WindowChrome({
   id,
   caption = 'Window',
   hideControls = false,
@@ -110,9 +79,9 @@ export function Window({
   minHeight = MIN_HEIGHT,
   draggable = true,
   resizable = true,
-
-  children,
-}: WindowPropTypes) {
+  portalNode,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+}: Omit<WindowPropTypes, 'children'> & { portalNode: HtmlPortalNode<Component<any>> }) {
   const { window, zIndex, isForeground } = useWindows(
     useShallow((e) => {
       const window = e.windows.find((i) => i.id === id)!
@@ -226,9 +195,6 @@ export function Window({
 
   const onWindowMouseDown = () => focusWindow(window)
 
-  const [isDragging, setIsDragging] = useState(false)
-  const portalContainer = document.body
-
   return (
     <>
       <Rnd
@@ -262,14 +228,10 @@ export function Window({
           },
         }}
         cancel="button"
-        onDragStart={() => setIsDragging(true)}
-        onResizeStart={() => setIsDragging(true)}
         onDragStop={(_, d) => {
-          setIsDragging(false)
           setDimensions((e) => ({ ...e, x: d.x, y: d.y }))
         }}
         onResizeStop={(_, _direction, ref, _delta, position) => {
-          setIsDragging(false)
           setDimensions((e) => ({
             ...e,
             ...position,
@@ -277,8 +239,8 @@ export function Window({
             height: parseInt(ref.style.height, 10),
           }))
         }}
-        minWidth={realMinWidth}
-        minHeight={realMinHeight}
+        minWidth={minWidth}
+        minHeight={minHeight}
         enableResizing={resizable}
         disableDragging={!draggable}
         onMouseDown={onWindowMouseDown}
@@ -296,8 +258,7 @@ export function Window({
             </div>
           )}
         </div>
-
-        {isDragging ? <div className="window-body"></div> : <WindowBody id={id}>{children}</WindowBody>}
+        <OutPortal node={portalNode} />
       </Rnd>
       {window.isDialog && isForeground && (
         <div
@@ -310,13 +271,27 @@ export function Window({
           }}
         />
       )}
-      {isDragging &&
-        createPortal(
-          <WindowBody id={id} ghost x={x} y={y} width={width} height={height}>
-            {children}
-          </WindowBody>,
-          portalContainer,
-        )}
+    </>
+  )
+}
+
+const WindowContent = React.memo<{
+  children: React.ReactNode
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  portalNode: HtmlPortalNode<Component<any>>
+}>(
+  function WindowContent({ children, portalNode }) {
+    return <InPortal node={portalNode}>{children}</InPortal>
+  },
+  // (prev, next) => prev.portalNode === next.portalNode && prev.children === next.children,
+)
+
+export function Window({ children, ...props }: WindowPropTypes) {
+  const portalNode = useMemo(() => createHtmlPortalNode({ attributes: { class: 'window-body' } }), [])
+  return (
+    <>
+      <WindowChrome {...props} portalNode={portalNode} />
+      <WindowContent portalNode={portalNode}>{children}</WindowContent>
     </>
   )
 }
