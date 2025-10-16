@@ -185,10 +185,15 @@ function parseMessageHeader(ab: ArrayBuffer): ParsedMessage {
 }
 export function parseMessageBody(desc: DescMessage | undefined, ab: Uint8Array): ParsedBody | null {
   if (!desc) return null
-  const data = fromBinary(desc, ab, {
-    readUnknownFields: true,
-  })
-  return { data }
+  try {
+    const data = fromBinary(desc, ab, {
+      readUnknownFields: true,
+    })
+    return { data }
+  } catch (err) {
+    console.warn('Error parsing', desc.typeName, ab, err)
+    return null
+  }
 }
 
 export async function openDirectoryPicker() {
