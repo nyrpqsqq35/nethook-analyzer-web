@@ -73,8 +73,15 @@ function RenderAsGlobalID({
   value: any
   onContextMenu: React.MouseEventHandler<HTMLElement>
 }) {
-  const inst = useMemo(() => new GlobalID(value), [value])
-  return (
+  const inst = useMemo(() => {
+    try {
+      return new GlobalID(value)
+    } catch (err) {
+      // @ts-expect-error shh
+      return err?.message ?? "Couldn't render globalid.."
+    }
+  }, [value])
+  return typeof inst !== 'string' ? (
     <details open>
       <summary onContextMenu={onContextMenu}>{label}</summary>
       <ul>
@@ -84,6 +91,10 @@ function RenderAsGlobalID({
         <li>Start Time: {inst.start_time().toString()}</li>
       </ul>
     </details>
+  ) : (
+    <li className={style.protoListItem} onContextMenu={onContextMenu}>
+      {label}: {inst}
+    </li>
   )
 }
 
