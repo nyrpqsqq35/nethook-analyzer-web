@@ -28,10 +28,12 @@ import style from '@/windows/MessageWindow/index.module.scss'
 import {
   CSOEconEquipSlotSchema,
   CSOEconGameAccountClientSchema,
+  type CSOEconItem,
+  type CSOEconItemAttribute,
   CSOEconItemSchema,
   CSOEconRentalHistorySchema,
 } from '@/proto/csgo/base_gcmessages_pb.ts'
-import SoItem from '@/windows/MessageWindow/soitem.tsx'
+import SoItem, { EconItem, EconItemAttribute } from '@/windows/MessageWindow/soitem.tsx'
 import {
   CSOAccountItemPersonalStoreSchema,
   CSOAccountKeychainRemoveToolChargesSchema,
@@ -122,7 +124,9 @@ export function RenderItem({
   fieldName,
   fieldPrefs,
   contextMenu,
-}: {
+  odata,
+  children,
+}: React.PropsWithChildren<{
   desc: DescEnum | ScalarType | DescMessage
   hasValue: boolean
   label: string
@@ -131,7 +135,8 @@ export function RenderItem({
   fieldKey: string
   fieldPrefs: FieldPrefs | undefined
   contextMenu: ContextMenuSchema
-}) {
+  odata?: any
+}>) {
   const onContextMenu = (e: React.MouseEvent<HTMLLIElement, MouseEvent>) => {
     e.preventDefault()
     showContextMenu(
@@ -191,6 +196,7 @@ export function RenderItem({
           <li className={className} onContextMenu={onContextMenu}>
             {label}
             <RenderAsSteamID steamId={value} displayAs={da} ref={valueRef} />
+            {children}
           </li>
         )
       } else if (da === 'gid') {
@@ -202,6 +208,7 @@ export function RenderItem({
           <li className={className} onContextMenu={onContextMenu}>
             {label}
             <RenderAsBytes value={value} displayAs={da as DisplayAsBytes} ref={valueRef} />
+            {children}
           </li>
         )
       }
@@ -210,6 +217,7 @@ export function RenderItem({
       <li className={className} onContextMenu={onContextMenu}>
         {label}
         <span ref={valueRef}>{value?.toString()}</span>
+        {children}
       </li>
     )
   } else {
@@ -222,13 +230,15 @@ export function RenderItem({
               {desc.typeName}.{desc.values[value as number].name.substring(desc.sharedPrefix?.length ?? 0)} (
               {value as number})
             </span>
+            {children}
           </li>
         )
       case 'message':
         return (
           <li>
             {/* @ts-expect-error yep */}
-            {hasValue ? <ProtoTree data={value} schema={desc} label={label} /> : `${label}null`}
+            {hasValue ? <ProtoTree data={value} schema={desc} label={label} parent={odata} /> : `${label}null`}
+            {children}
           </li>
         )
     }
@@ -236,17 +246,18 @@ export function RenderItem({
   return <li>idk</li>
 }
 
-function ProtoItem({
+export function ProtoItem({
   member,
   hasValue,
   value,
   odata,
-}: {
+  children,
+}: React.PropsWithChildren<{
   member: DescField | DescOneof
   hasValue: boolean
   value: any
   odata: any
-}) {
+}>) {
   const { hideDefaultFields, qualifiedTypeNames } = usePreferencesStore(
     useShallow((a) => ({
       hideDefaultFields: a.hideDefaultFields,
@@ -343,6 +354,7 @@ function ProtoItem({
             fieldKey={fieldKey}
             fieldPrefs={fieldPrefs}
             contextMenu={contextMenu}
+            children={children}
           />
         )
       }
@@ -358,6 +370,7 @@ function ProtoItem({
             fieldKey={fieldKey}
             fieldPrefs={fieldPrefs}
             contextMenu={contextMenu}
+            children={children}
           />
         )
       case 'message':
@@ -372,6 +385,7 @@ function ProtoItem({
             fieldKey={fieldKey}
             fieldPrefs={fieldPrefs}
             contextMenu={contextMenu}
+            children={children}
           />
         )
       case 'list': {
@@ -451,6 +465,7 @@ function ProtoItem({
                       fieldKey={fieldKey}
                       fieldPrefs={fieldPrefs}
                       contextMenu={contextMenu}
+                      odata={odata}
                     />
                   )
                 })}
@@ -482,12 +497,35 @@ export function ProtoTree<T extends Message>({
   data,
   schema,
   label,
+  parent,
 }: {
   data: T
   schema: GenMessage<T>
   label?: string
+  parent?: any
 }) {
   const qualifiedTypeNames = usePreferencesStore(useShallow((e) => e.qualifiedTypeNames))
+
+  if (schema.typeName === 'CSOEconItem') {
+    return (
+      <EconItem
+        data={data as unknown as CSOEconItem}
+        schema={schema as GenMessage<CSOEconItem>}
+        label={label}
+        qualifiedTypeNames={qualifiedTypeNames}
+      />
+    )
+  } else if (schema.typeName === 'CSOEconItemAttribute') {
+    return (
+      <EconItemAttribute
+        data={data as unknown as CSOEconItemAttribute}
+        schema={schema as GenMessage<CSOEconItemAttribute>}
+        label={label}
+        qualifiedTypeNames={qualifiedTypeNames}
+        parent={parent as unknown as CSOEconItem}
+      />
+    )
+  }
   return (
     <details open>
       <summary>{label ? label : `Proto ${qualifiedTypeNames ? schema.typeName : schema.name}`}</summary>

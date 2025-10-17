@@ -15,10 +15,16 @@ export interface FieldPrefs {
   displayAs?: DisplayAs
 }
 
+export type EconItemAttributeDisplayAs = 'string' | 'float' | 'uint32' | 'hex'
+export interface EconItemAttributePrefs {
+  displayAs?: EconItemAttributeDisplayAs
+}
+
 export interface PreferencesState {
   hideDefaultFields: boolean
   qualifiedTypeNames: boolean
   fields: Record<FieldKey, FieldPrefs>
+  econItemAttributes: Record<string, EconItemAttributePrefs>
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -27,7 +33,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       // @ts-expect-error types need the set function for some reason
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       immer((set) => {
-        return { hideDefaultFields: false, qualifiedTypeNames: false, fields: {} }
+        return { hideDefaultFields: false, qualifiedTypeNames: false, fields: {}, econItemAttributes: {} }
       }),
       {
         name: 'PreferencesStore',
@@ -42,10 +48,13 @@ export const usePreferencesStore = create<PreferencesState>()(
             if (curVer < 3) {
               ps.qualifiedTypeNames = false
             }
+            if (curVer < 4) {
+              ps.econItemAttributes = {}
+            }
           }
           return ps
         },
-        version: 3,
+        version: 4,
       },
     ),
   ),
@@ -71,6 +80,29 @@ export function updateDisplayAs(fieldKey: FieldKey, displayAs: DisplayAs) {
       }
     } else {
       e.fields[fieldKey] = { displayAs }
+    }
+  })
+}
+
+export function useEconPrefs(key?: string): EconItemAttributePrefs | undefined {
+  return usePreferencesStore(useShallow((e) => (key ? e.econItemAttributes[key] : undefined)))
+}
+
+export function removeEconPrefs(key: string) {
+  return usePreferencesStore.setState((e) => {
+    delete e.fields[key]
+  })
+}
+export function updateEconDisplayAs(key: string, displayAs: EconItemAttributeDisplayAs) {
+  return usePreferencesStore.setState((e) => {
+    if (e.econItemAttributes[key]) {
+      if (e.econItemAttributes[key].displayAs === displayAs) {
+        delete e.econItemAttributes[key]
+      } else {
+        e.econItemAttributes[key].displayAs = displayAs
+      }
+    } else {
+      e.econItemAttributes[key] = { displayAs }
     }
   })
 }
