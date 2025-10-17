@@ -19,6 +19,7 @@
     "@bufbuild/buf": "^1.58.0",
     "@bufbuild/protobuf": "^2.9.0",
     "@column-resizer/react": "^1.4.0",
+    "@node-steam/vdf": "^2.2.0",
     "@react-hook/window-size": "^3.1.1",
     "@tanstack/match-sorter-utils": "^8.19.4",
     "@tanstack/react-table": "^8.21.3",

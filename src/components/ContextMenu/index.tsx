@@ -35,7 +35,7 @@ export function ContextMenu({ id }: ContextMenuPropTypes) {
       if (index + 1 === items.length) nextIndex = index
       const nextItem = items[nextIndex]
       const label = typeof item === 'string' ? item : item.label
-
+      const selected = typeof item === 'string' ? false : (item.selected ?? false)
       const subitems: ContextMenuItem[] = typeof item !== 'string' ? item.items || [] : []
       const hasSubItems = subitems.length > 0
 
@@ -49,6 +49,7 @@ export function ContextMenu({ id }: ContextMenuPropTypes) {
           role="menuitem"
           className={clsx({
             'has-divider': nextItem === ContextMenuSpecialItem.Separator,
+            [style.selected]: selected,
           })}
           tabIndex={tabIndex}
           aria-haspopup={hasSubItems}

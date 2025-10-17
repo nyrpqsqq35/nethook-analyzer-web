@@ -20,6 +20,9 @@ importers:
       '@column-resizer/react':
         specifier: ^1.4.0
         version: 1.4.0(react@19.2.0)
+      '@node-steam/vdf':
+        specifier: ^2.2.0
+        version: 2.2.0
       '@react-hook/window-size':
         specifier: ^3.1.1
         version: 3.1.1(react@19.2.0)
@@ -395,6 +398,10 @@ packages:
 
   '@napi-rs/wasm-runtime@1.0.7':
     resolution: {integrity: sha512-SeDnOO0Tk7Okiq6DbXmmBODgOAb9dp9gjlphokTUxmt8U3liIP1ZsozBahH69j/RJv+Rfs6IwUKHTgQYJ/HBAw==}
+
+  '@node-steam/vdf@2.2.0':
+    resolution: {integrity: sha512-YCfIPsIpyrtOP5AdsarjPqjTElVFrXJlWedWNzjCaIeam06v9ebYgApRAcw9b93awNDboTEiHFMnCvlJJHqKcA==}
+    engines: {node: '>=8.0.0'}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -2183,6 +2190,8 @@ snapshots:
       '@emnapi/runtime': 1.5.0
       '@tybys/wasm-util': 0.10.1
     optional: true
+
+  '@node-steam/vdf@2.2.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:

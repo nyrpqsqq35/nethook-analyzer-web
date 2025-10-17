@@ -9,6 +9,9 @@ import { attributesMap, items_game, rarityMap } from '@/lib/cs2/items.ts'
 import { showContextMenu } from '@/stores/useContextMenu.tsx'
 import { type EconItemAttributeDisplayAs, updateEconDisplayAs, useEconPrefs } from '@/stores/preferencesStore.ts'
 
+import '@/lib/cs2/loc.ts'
+import { getLoc } from '@/lib/cs2/loc.ts'
+
 const ItemQualities = {
     [0]: 'Normal',
     [1]: 'Genuine',
@@ -73,7 +76,7 @@ export function EconItem({
 
           if (member.name === 'def_index') {
             value = value as number
-            value = items_game.items[value] ? `${items_game.items[value].name} (${value})` : value
+            value = items_game.items[value] ? `${getLoc(items_game.items[value].name)} (${value})` : value
           } else if (member.name === 'quality') {
             value = value as number
             value = ItemQualities[value] ? `${ItemQualities[value]} (${value})` : value
@@ -84,7 +87,7 @@ export function EconItem({
             value = value as number
             const foundRarity = rarityMap.get(value)
             if (foundRarity) {
-              value = `${foundRarity.name} (${value})`
+              value = `${getLoc(foundRarity.locKey)} (${value})`
               return (
                 <ProtoItem key={member.localName} member={member} value={value} hasValue={hasValue} odata={data}>
                   <div className={style.colorSquare} style={{ backgroundColor: foundRarity.hexColor }} />
@@ -182,7 +185,10 @@ export function EconItemAttribute({
         </li>
         {attrScheme?.attribute_class === 'set_item_texture_prefab' && (
           <li className={style.protoListItem}>
-            paint kit: {items_game.paint_kits[new Float32Array(new Uint8Array(data.valueBytes).buffer)[0]]?.name}
+            paint kit:{' '}
+            {getLoc(
+              items_game.paint_kits[new Float32Array(new Uint8Array(data.valueBytes).buffer)[0]]?.description_tag,
+            )}
           </li>
         )}
         {/*{Object.values(schema.members).map((member) => {*/}

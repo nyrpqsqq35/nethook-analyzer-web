@@ -311,8 +311,16 @@ export function ProtoItem({
           contextMenu.items.push({
             label: 'SteamID',
             items: [
-              { label: 'Steam2', onClick: () => updateDisplayAs(fieldKey, 'steamid.2') },
-              { label: 'Steam3', onClick: () => updateDisplayAs(fieldKey, 'steamid.3') },
+              {
+                label: 'Steam2',
+                onClick: () => updateDisplayAs(fieldKey, 'steamid.2'),
+                selected: fieldPrefs?.displayAs === 'steamid.2',
+              },
+              {
+                label: 'Steam3',
+                onClick: () => updateDisplayAs(fieldKey, 'steamid.3'),
+                selected: fieldPrefs?.displayAs === 'steamid.3',
+              },
             ],
           })
         }
@@ -321,10 +329,12 @@ export function ProtoItem({
             {
               label: 'GlobalID (GID)',
               onClick: () => updateDisplayAs(fieldKey, 'gid'),
+              selected: fieldPrefs?.displayAs === 'gid',
             },
             {
               label: 'Date/Time',
               onClick: () => updateDisplayAs(fieldKey, 'datetime'),
+              selected: fieldPrefs?.displayAs === 'datetime',
             },
           )
         }
@@ -336,22 +346,27 @@ export function ProtoItem({
             {
               label: 'Binary KeyValues (VDF)',
               onClick: () => updateDisplayAs(fieldKey, 'vdf'),
+              selected: fieldPrefs?.displayAs === 'vdf',
             },
             {
               label: 'Protobuf',
               onClick: () => updateDisplayAs(fieldKey, 'pb'),
+              selected: fieldPrefs?.displayAs === 'pb',
             },
             {
               label: 'ASCII',
               onClick: () => updateDisplayAs(fieldKey, 'ascii'),
+              selected: fieldPrefs?.displayAs === 'ascii',
             },
             {
               label: 'UTF-8',
               onClick: () => updateDisplayAs(fieldKey, 'utf8'),
+              selected: fieldPrefs?.displayAs === 'utf8',
             },
             {
               label: 'Hexadecimal',
               onClick: () => updateDisplayAs(fieldKey, 'hex'),
+              selected: fieldPrefs?.displayAs === 'hex',
             },
           )
         }

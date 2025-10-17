@@ -9,7 +9,7 @@ export enum ContextMenuSpecialItem {
 export interface ContextMenuItemObject {
   label: string
   items?: ContextMenuItem[]
-
+  selected?: boolean
   onClick?: (e: MouseEvent) => void
 }
 export type ContextMenuItem = ContextMenuSpecialItem | string | ContextMenuItemObject

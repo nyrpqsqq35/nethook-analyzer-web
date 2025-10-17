@@ -9,3 +9,15 @@
     z-index: $zIndex + 1;
   }
 }
+
+.selected {
+  &::before {
+    content: "\2714";
+    font-weight: bold;
+    display: block;
+    position: absolute;
+    top: 5px;
+    left: 7px;
+    color: #4a5f97;
+  }
+}

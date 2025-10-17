@@ -62,12 +62,13 @@ export const attributesMap = new Map<number, GameItemAttribute>(
 )
 interface Rarity {
   name: string
+  locKey: string
   hexColor: string
 }
 export const rarityMap = new Map<number, Rarity>(
   Object.entries(items_game.rarities).map(([name, obj]) => [
     obj.value,
-    { name, hexColor: items_game.colors[obj.color].hex_color },
+    { name, locKey: obj.loc_key, hexColor: items_game.colors[obj.color].hex_color },
   ]),
 )
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
