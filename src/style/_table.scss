@@ -18,10 +18,10 @@ table {
         user-select: none;
         text-align: left;
         border: 1px solid transparent;
-        padding: 0 0 0 $columnPadding !important;
+        padding: 0 0 4px $columnPadding !important;
         &:not(:last-child) {
           border-right: 1px solid #deebf7;
-          padding: 0 0 0 $columnPadding !important;
+          padding: 0 0 4px $columnPadding !important;
         }
         &:hover {
           background: linear-gradient(#f0f8f8 50%, #f0f4f8 50%);

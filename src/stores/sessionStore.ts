@@ -1,7 +1,6 @@
 import { create } from 'zustand/react'
 // import { devtools } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
-import { toast } from 'react-hot-toast/headless'
 import { useShallow } from 'zustand/react/shallow'
 import { EMsg_Enum } from '@/lib/steam-types.ts'
 import { Buffer } from '@/lib/Buffer.ts'
@@ -9,10 +8,36 @@ import { EMsg } from '@/proto/steam/enums_clientserver_pb.ts'
 import { type CMsgProtoBufHeader, CMsgProtoBufHeaderSchema } from '@/proto/steam/steammessages_base_pb.ts'
 import { type DescMessage, fromBinary } from '@bufbuild/protobuf'
 import { getProtoFromEMsg } from '@/proto/steam.ts'
-export type Direction = 'in' | 'out'
-
 import { gcEMsgToName } from '@/proto/csgo.ts'
 import { parseGcMessage } from '@/lib/gc.ts'
+import { showMessageBox } from '@/stores/useWindows.tsx'
+
+export type Direction = 'in' | 'out'
+
+declare global {
+  interface FileSystemChangeRecord {
+    readonly changedHandle: FileSystemFileHandle | FileSystemDirectoryHandle
+    readonly relativePathComponents: Array<string>
+    readonly relativePathMovedFrom: Array<string> | null
+    readonly root: FileSystemFileHandle | FileSystemDirectoryHandle
+    readonly type: 'appeared' | 'disappeared' | 'errored' | 'modified' | 'moved' | 'unknown'
+  }
+
+  interface FileSystemObserveOptions {
+    recursive?: boolean
+  }
+
+  interface FileSystemObserver {
+    observe(handle: FileSystemFileHandle | FileSystemDirectoryHandle, options?: FileSystemObserveOptions): Promise<void>
+    disconnect(): void
+  }
+  var FileSystemObserver: {
+    prototype: FileSystemObserver
+    new (
+      callback: (records: Array<FileSystemChangeRecord>, observer: FileSystemObserver) => unknown,
+    ): FileSystemObserver
+  }
+}
 
 export interface ParsedMessageIsProtobuf {
   eMsg: number
@@ -68,6 +93,7 @@ export interface NetHookMessage {
 export interface NetHookSession {
   name: string
   dir: FileSystemDirectoryHandle
+  observer?: FileSystemObserver
   messages: Record<number /*seq*/, NetHookMessage>
   selectedSeq?: number
 }
@@ -97,7 +123,57 @@ export function createSession(dir: FileSystemDirectoryHandle) {
       dir,
       messages: {},
     }
+    if (globalThis.FileSystemObserver) {
+      s.session.observer = new FileSystemObserver(observerCallback)
+      s.session.observer
+        .observe(s.session.dir)
+        .then(() => {
+          console.log('observing')
+        })
+        .catch((err) => {
+          console.warn('error observing', err)
+        })
+    }
   })
+}
+
+async function onFileChange(change: FileSystemChangeRecord): Promise<NetHookMessage | undefined> {
+  try {
+    if (change.type === 'unknown') {
+      console.warn('SHOULD RELOAD SESSION FILES')
+    } else if (change.changedHandle.kind === 'file') {
+      // console.log('File system change', change)
+      if (change.type === 'moved') {
+        // For non-windows platforms
+        const file = change.changedHandle as FileSystemFileHandle
+        if (file.name.endsWith('.bin')) {
+          return parseFile(file)
+        }
+      } else if (change.type === 'appeared') {
+        // For windows
+        const file = change.changedHandle as FileSystemFileHandle
+        if (file.name.endsWith('.bin')) {
+          return parseFile(file)
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('observer error', err)
+  }
+  return undefined
+}
+async function observerCallback(changes: Array<FileSystemChangeRecord>) {
+  const newItems: Array<NetHookMessage> = []
+  for (const change of changes) {
+    const msg = await onFileChange(change)
+    if (msg) newItems.push(msg)
+  }
+  if (newItems.length)
+    useSessionStore.setState((s) => {
+      for (const item of newItems) {
+        s.session!.messages[item.seq] = item
+      }
+    })
 }
 
 type NameParts = Pick<NetHookMessage, 'seq' | 'direction' | 'eMsg' | 'eMsgName'>
@@ -205,7 +281,7 @@ export async function openDirectoryPicker() {
     if (err instanceof DOMException) {
       switch (err.name) {
         case 'AbortError':
-          toast.error('Directory selection aborted. Did you grant permission?')
+          showMessageBox('Error', 'Directory selection aborted. Did you grant permission?')
           break
         case 'SecurityError':
           break

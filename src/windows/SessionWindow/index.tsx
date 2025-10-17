@@ -1,6 +1,6 @@
 import { type ChildWindowPropTypes, Window } from '@/components/Window'
 import { createSingletonWindow, createWindow, HConstraint, VConstraint } from '@/stores/useWindows.tsx'
-import type { ColumnDef, FilterFn } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import { type NetHookMessage, type NetHookSession, useSessionStore } from '@/stores/sessionStore.ts'
 import Table from '@/components/Table'
 import { useShallow } from 'zustand/react/shallow'
@@ -10,7 +10,6 @@ import GroupBox from '@/components/GroupBox'
 import { Checkbox, TextInput } from '@/components/Input'
 import { usePreferencesStore } from '@/stores/preferencesStore.ts'
 import { BlueFolderNetworkIcon } from '@/components/Icon/fugue.tsx'
-import { type RankingInfo } from '@tanstack/match-sorter-utils'
 import { onGlobalFilterChange, useTableData } from '@/stores/useTableData.tsx'
 const messageColumns: ColumnDef<NetHookMessage>[] = [
   {
@@ -20,6 +19,8 @@ const messageColumns: ColumnDef<NetHookMessage>[] = [
     minSize: 35,
     size: 35,
     filterFn: 'equalsString',
+    sortingFn: 'basic',
+    enableSorting: true,
   },
   {
     header: 'Direction',
@@ -49,16 +50,6 @@ const messageColumns: ColumnDef<NetHookMessage>[] = [
 //
 // const ascPredicate = (a: NetHookMessage, b: NetHookMessage) => (a.seq < b.seq ? 1 : -1),
 //   descPredicate = (a: NetHookMessage, b: NetHookMessage) => (a.seq > b.seq ? 1 : -1)
-
-declare module '@tanstack/react-table' {
-  //add fuzzy filter to the filterFns
-  interface FilterFns {
-    fuzzy: FilterFn<unknown>
-  }
-  interface FilterMeta {
-    itemRank: RankingInfo
-  }
-}
 
 function MessageTable({ session }: { session: NetHookSession }) {
   // const [sortOrder, setSortOrder] = useState<SortOrder>('asc')

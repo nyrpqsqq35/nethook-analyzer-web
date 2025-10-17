@@ -8,13 +8,15 @@ import {
   type Row,
   type FilterFn,
   getFilteredRowModel,
+  getSortedRowModel,
 } from '@tanstack/react-table'
 import { type CSSProperties, type MouseEventHandler, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { type ContextMenuSchema, showContextMenu } from '@/stores/useContextMenu.tsx'
-import { rankItem } from '@tanstack/match-sorter-utils'
-import { onGlobalFilterChange, useTableData } from '@/stores/useTableData.tsx'
-
+import { type RankingInfo, rankItem } from '@tanstack/match-sorter-utils'
+import { onGlobalFilterChange, onSortingChange, useTableData } from '@/stores/useTableData.tsx'
+import clsx from 'clsx'
+import style from './index.module.scss'
 export interface TableItemProps<T = any> {
   contextMenu?: (row: T) => ContextMenuSchema | undefined
   onClick?: (row: T) => MouseEventHandler<HTMLTableRowElement>
@@ -134,6 +136,16 @@ const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
   return itemRank.passed
 }
 
+declare module '@tanstack/react-table' {
+  //add fuzzy filter to the filterFns
+  interface FilterFns {
+    fuzzy: FilterFn<unknown>
+  }
+  interface FilterMeta {
+    itemRank: RankingInfo
+  }
+}
+
 export default function Table<T>({
   id,
   /*id, className, children,*/ data,
@@ -143,20 +155,24 @@ export default function Table<T>({
   itemProps,
 }: TablePropTypes<T>) {
   const tableData = useTableData(id)
+  console.log('sorting', tableData?.sorting ?? [])
   const table = useReactTable({
     data,
     columns,
     columnResizeMode: 'onChange',
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     filterFns: {
       fuzzy: fuzzyFilter,
     },
-    globalFilterFn: 'fuzzy',
+    globalFilterFn: 'includesString',
     state: {
       globalFilter: tableData?.globalFilter ?? '',
+      sorting: tableData?.sorting ?? [],
     },
     onGlobalFilterChange: onGlobalFilterChange(id),
+    onSortingChange: onSortingChange(id),
   })
 
   const tableContainerRef = useRef<HTMLDivElement>(null)
@@ -179,6 +195,7 @@ export default function Table<T>({
             position: 'sticky',
             top: 0,
             zIndex: 1,
+            height: 30,
           }}
         >
           {table.getHeaderGroups().map((headerGroup) => (
@@ -186,7 +203,17 @@ export default function Table<T>({
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  style={{ display: 'flex', width: header.getSize() === 420 ? '100%' : header.getSize() }}
+                  className={clsx({
+                    [style.indicator]: !!header.column.getIsSorted(),
+                    [style.up]: header.column.getIsSorted() === 'desc',
+                  })}
+                  style={{
+                    display: 'flex',
+                    height: 30,
+                    alignItems: 'end',
+                    width: header.getSize() === 420 ? '100%' : header.getSize(),
+                  }}
+                  onClick={header.column.getToggleSortingHandler()}
                 >
                   {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   <div
