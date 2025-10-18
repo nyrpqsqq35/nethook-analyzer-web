@@ -14,7 +14,7 @@ import {
   Collection,
   type Key,
 } from 'react-aria-components'
-import { ArrowDownIcon } from '@/components/Icon/silk.tsx'
+// import { ArrowDownIcon } from '@/components/Icon/silk.tsx'
 import { steamProtoDescs } from '@/proto/steam.ts'
 import { type DescLocator, type FieldPrefsPb, updateDisplayAs } from '@/stores/preferencesStore.ts'
 import { useMemo, useState } from 'react'
@@ -67,9 +67,7 @@ export default function ProtobufSelectorWindow({
         >
           <div>
             <Input />
-            <Button>
-              <ArrowDownIcon />
-            </Button>
+            <Button>{/*<ArrowDownIcon />*/}</Button>
           </div>
           <Popover>
             <ListBox<(typeof protos)[0]>
