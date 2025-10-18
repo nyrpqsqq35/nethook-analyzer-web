@@ -102,6 +102,57 @@ function RenderAsGlobalID({
     </li>
   )
 }
+function numToBytes(num: number | bigint) {
+  let size = 32
+  if (typeof num === 'number') {
+    num = BigInt(num)
+    size = 4
+  }
+  const result = new Uint8Array(size)
+  let i = 0
+  while (num > 0n) {
+    result[i++] = Number(num % 256n)
+    num = num / 256n
+  }
+  return result
+}
+function u8ToString(a: Uint8Array) {
+  let buf = ''
+  for (let i = 0; i < a.byteLength; ++i) {
+    const code = a[i]
+    if (code === 0) break
+    buf += String.fromCharCode(code)
+  }
+  return buf
+}
+function RenderAsChars({
+  label,
+  value,
+  onContextMenu,
+  displayAs,
+}: {
+  label: string
+  value: number
+  onContextMenu: React.MouseEventHandler<HTMLElement>
+  displayAs: 'chars' | 'chars.reversed'
+}) {
+  const rendered = useMemo(() => {
+    const bytes = numToBytes(value)
+    let ts = u8ToString(bytes)
+    if (displayAs === 'chars.reversed') {
+      ts = ts.split('').reverse().join('')
+    }
+
+    return `'${ts}'`
+  }, [value, displayAs])
+  return (
+    <li className={style.protoListItem} onContextMenu={onContextMenu}>
+      {label}
+      {rendered}
+    </li>
+  )
+}
+
 function RenderAsPb({
   label,
   value,
@@ -257,6 +308,8 @@ export function RenderItem({
         )
       } else if (da === 'gid') {
         return <RenderAsGlobalID value={value} label={fieldName} onContextMenu={onContextMenu} />
+      } else if (da === 'chars' || da === 'chars.reversed') {
+        return <RenderAsChars label={label} value={value} onContextMenu={onContextMenu} displayAs={da} />
       }
 
       if (desc === ScalarType.BYTES) {
@@ -378,6 +431,16 @@ export function ProtoItem({
               label: 'GlobalID (GID)',
               onClick: () => updateDisplayAs(fieldKey, 'gid'),
               selected: fieldPrefs?.displayAs === 'gid',
+            },
+            {
+              label: 'Chars',
+              onClick: () => updateDisplayAs(fieldKey, 'chars'),
+              selected: fieldPrefs?.displayAs === 'chars',
+            },
+            {
+              label: 'Chars (reversed)',
+              onClick: () => updateDisplayAs(fieldKey, 'chars.reversed'),
+              selected: fieldPrefs?.displayAs === 'chars.reversed',
             },
             {
               label: 'Date/Time',

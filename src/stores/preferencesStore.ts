@@ -7,7 +7,7 @@ export type DisplayAsBytes = 'vdf' | 'vdf.lzma' | 'pb' | 'ascii' | 'utf8' | 'hex
 export type DisplayAsSteamID = 'steamid.2' | 'steamid.3'
 export type DisplayAsIP = 'ip.4' | 'ip.6'
 export type DisplayAsString = 'str.raw' | 'str.jwt'
-export type DisplayAsNumeric = 'gid' | 'datetime'
+export type DisplayAsNumeric = 'gid' | 'datetime' | 'chars' | 'chars.reversed'
 export type DisplayAs = DisplayAsBytes | DisplayAsSteamID | DisplayAsIP | DisplayAsString | DisplayAsNumeric
 
 type FieldKey = string
