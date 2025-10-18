@@ -130,11 +130,13 @@ function RenderAsChars({
   value,
   onContextMenu,
   displayAs,
+  ref,
 }: {
   label: string
   value: number
   onContextMenu: React.MouseEventHandler<HTMLElement>
   displayAs: 'chars' | 'chars.reversed'
+  ref: ValueRef
 }) {
   const rendered = useMemo(() => {
     const bytes = numToBytes(value)
@@ -148,7 +150,7 @@ function RenderAsChars({
   return (
     <li className={style.protoListItem} onContextMenu={onContextMenu}>
       {label}
-      {rendered}
+      <span ref={ref}>{rendered}</span>
     </li>
   )
 }
@@ -309,7 +311,7 @@ export function RenderItem({
       } else if (da === 'gid') {
         return <RenderAsGlobalID value={value} label={fieldName} onContextMenu={onContextMenu} />
       } else if (da === 'chars' || da === 'chars.reversed') {
-        return <RenderAsChars label={label} value={value} onContextMenu={onContextMenu} displayAs={da} />
+        return <RenderAsChars label={label} value={value} onContextMenu={onContextMenu} displayAs={da} ref={valueRef} />
       }
 
       if (desc === ScalarType.BYTES) {
