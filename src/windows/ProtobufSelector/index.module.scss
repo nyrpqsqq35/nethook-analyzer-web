@@ -1,0 +1,18 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  //padding: 8px 4px;
+  margin: 0 6px;
+  flex-grow: 1;
+}
+
+.meow {
+  place-self: end;
+  display: flex;
+  gap: 0.5em;
+}
+
+[role=listbox] [role=option][aria-selected="false"] {
+  background-color: inherit !important;
+  color: inherit !important;
+}

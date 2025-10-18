@@ -5,6 +5,7 @@ import {
   type DescField,
   type DescMessage,
   type DescOneof,
+  fromBinary,
   type Message,
   ScalarType,
 } from '@bufbuild/protobuf'
@@ -13,6 +14,7 @@ import {
   type DisplayAsBytes,
   type DisplayAsSteamID,
   type FieldPrefs,
+  type FieldPrefsPb,
   updateDisplayAs,
   useFieldPrefs,
   usePreferencesStore,
@@ -49,6 +51,9 @@ import {
   CSOVolatileItemClaimedRewardsSchema,
   CSOVolatileItemOfferSchema,
 } from '@/proto/csgo/cstrike15_gcmessages_pb.ts'
+import { createSingletonWindow } from '@/stores/useWindows.tsx'
+import ProtobufSelectorWindow from '@/windows/ProtobufSelector'
+import { findMessageWithLocator } from '@/proto'
 
 type ValueRef = React.RefObject<HTMLSpanElement | null>
 
@@ -94,6 +99,46 @@ function RenderAsGlobalID({
   ) : (
     <li className={style.protoListItem} onContextMenu={onContextMenu}>
       {label}: {inst}
+    </li>
+  )
+}
+function RenderAsPb({
+  label,
+  value,
+  fieldPrefs,
+  onContextMenu,
+}: {
+  label: string
+  value: any
+  onContextMenu: React.MouseEventHandler<HTMLElement>
+  fieldPrefs: FieldPrefs
+}) {
+  const obj = useMemo(() => {
+    try {
+      const desc = findMessageWithLocator((fieldPrefs.displayAsAdditional as FieldPrefsPb).desc)
+      if (desc) {
+        const decoded = fromBinary(desc, value, { readUnknownFields: true })
+        return { desc, decoded }
+      } else {
+        return "Couldn't find descriptor"
+      }
+    } catch (err) {
+      // @ts-expect-error shh
+      return err?.message ?? "Couldn't render as protobuf .."
+    }
+  }, [fieldPrefs.displayAsAdditional, value])
+  return typeof obj !== 'string' ? (
+    <li className={style.protoListItem}>
+      <ProtoTree
+        data={obj.decoded}
+        schema={obj.desc}
+        label={`${label}: ${obj.desc.name}`}
+        onContextMenu={onContextMenu}
+      />
+    </li>
+  ) : (
+    <li className={style.protoListItem} onContextMenu={onContextMenu}>
+      {label}: {obj}
     </li>
   )
 }
@@ -215,6 +260,9 @@ export function RenderItem({
       }
 
       if (desc === ScalarType.BYTES) {
+        if (da === 'pb') {
+          return <RenderAsPb fieldPrefs={fieldPrefs} value={value} label={fieldName} onContextMenu={onContextMenu} />
+        }
         return (
           <li className={className} onContextMenu={onContextMenu}>
             {label}
@@ -350,7 +398,20 @@ export function ProtoItem({
             },
             {
               label: 'Protobuf',
-              onClick: () => updateDisplayAs(fieldKey, 'pb'),
+              onClick: () => {
+                if (fieldPrefs?.displayAs === 'pb') {
+                  // turn it off
+                  updateDisplayAs(fieldKey, 'pb')
+                } else {
+                  createSingletonWindow(ProtobufSelectorWindow, {
+                    id: 'protobuf-selector',
+                    dialog: true,
+                    props: {
+                      fieldKey,
+                    },
+                  })
+                }
+              },
               selected: fieldPrefs?.displayAs === 'pb',
             },
             {
@@ -524,11 +585,13 @@ export function ProtoTree<T extends Message>({
   schema,
   label,
   parent,
+  onContextMenu,
 }: {
   data: T
   schema: GenMessage<T>
   label?: string
   parent?: any
+  onContextMenu?: React.MouseEventHandler<HTMLElement>
 }) {
   const qualifiedTypeNames = usePreferencesStore(useShallow((e) => e.qualifiedTypeNames))
 
@@ -554,7 +617,9 @@ export function ProtoTree<T extends Message>({
   }
   return (
     <details open>
-      <summary>{label ? label : `Proto ${qualifiedTypeNames ? schema.typeName : schema.name}`}</summary>
+      <summary onContextMenu={onContextMenu}>
+        {label ? label : `Proto ${qualifiedTypeNames ? schema.typeName : schema.name}`}
+      </summary>
       <ul>
         {Object.values(schema.members).map((member) => {
           const value = data[member.localName as keyof T]

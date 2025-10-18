@@ -11,8 +11,16 @@ export type DisplayAsNumeric = 'gid' | 'datetime'
 export type DisplayAs = DisplayAsBytes | DisplayAsSteamID | DisplayAsIP | DisplayAsString | DisplayAsNumeric
 
 type FieldKey = string
+export type DescLocator = [folderName: 'steam' | 'webui' | 'csgo', fileDescName: string, messageDescTypeName: string]
+export interface FieldPrefsPb {
+  desc: DescLocator
+}
+export interface FieldPrefsEnum {
+  _: null
+}
 export interface FieldPrefs {
   displayAs?: DisplayAs
+  displayAsAdditional?: FieldPrefsPb | FieldPrefsEnum
 }
 
 export type EconItemAttributeDisplayAs = 'string' | 'float' | 'uint32' | 'hex'
@@ -51,10 +59,17 @@ export const usePreferencesStore = create<PreferencesState>()(
             if (curVer < 4) {
               ps.econItemAttributes = {}
             }
+            if (curVer < 5) {
+              for (const key in ps.fields) {
+                if (ps.fields[key].displayAs === 'pb') {
+                  delete ps.fields[key]
+                }
+              }
+            }
           }
           return ps
         },
-        version: 4,
+        version: 5,
       },
     ),
   ),
@@ -69,7 +84,11 @@ export function removeFieldPrefs(fieldKey: FieldKey) {
     delete e.fields[fieldKey]
   })
 }
-export function updateDisplayAs(fieldKey: FieldKey, displayAs: DisplayAs) {
+export function updateDisplayAs<T extends FieldPrefs['displayAsAdditional']>(
+  fieldKey: FieldKey,
+  displayAs: DisplayAs,
+  displayAsAdditional?: T,
+) {
   return usePreferencesStore.setState((e) => {
     if (e.fields[fieldKey]) {
       if (e.fields[fieldKey].displayAs === displayAs) {
@@ -77,9 +96,10 @@ export function updateDisplayAs(fieldKey: FieldKey, displayAs: DisplayAs) {
         delete e.fields[fieldKey]
       } else {
         e.fields[fieldKey].displayAs = displayAs
+        e.fields[fieldKey].displayAsAdditional = displayAsAdditional
       }
     } else {
-      e.fields[fieldKey] = { displayAs }
+      e.fields[fieldKey] = { displayAs, displayAsAdditional }
     }
   })
 }
