@@ -159,6 +159,7 @@ export function Preferences() {
           onClick={() => {
             createSingletonWindow(FiltersWindow, {
               id: 'nethook-session-filters',
+              dialog: true,
             })
           }}
         >
