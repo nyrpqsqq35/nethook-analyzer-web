@@ -14,7 +14,13 @@ import { type CSSProperties, type MouseEventHandler, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { type ContextMenuSchema, showContextMenu } from '@/stores/useContextMenu.tsx'
 import { type RankingInfo, rankItem } from '@tanstack/match-sorter-utils'
-import { onColumnFiltersChange, onGlobalFilterChange, onSortingChange, useTableData } from '@/stores/useTableData.tsx'
+import {
+  onColumnFiltersChange,
+  onColumnSizingChange,
+  onGlobalFilterChange,
+  onSortingChange,
+  useTableData,
+} from '@/stores/useTableData.tsx'
 import clsx from 'clsx'
 import style from './index.module.scss'
 export interface TableItemProps<T = any> {
@@ -189,11 +195,13 @@ export default function Table<T>({
     state: {
       globalFilter: tableData?.globalFilter ?? '',
       columnFilters: tableData?.columnFilters ?? [],
+      columnSizing: tableData?.columnSizing ?? {},
       sorting: tableData?.sorting ?? [],
     },
     onGlobalFilterChange: onGlobalFilterChange(id),
     onSortingChange: onSortingChange(id),
     onColumnFiltersChange: onColumnFiltersChange(id),
+    onColumnSizingChange: onColumnSizingChange(id),
   })
 
   const tableContainerRef = useRef<HTMLDivElement>(null)

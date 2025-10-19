@@ -2,11 +2,12 @@
 import { create } from 'zustand/react'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { useShallow } from 'zustand/react/shallow'
-import type { ColumnFiltersState, SortingState, Updater } from '@tanstack/react-table'
+import type { ColumnFiltersState, ColumnSizingState, SortingState, Updater } from '@tanstack/react-table'
 
 interface TableData {
   globalFilter: string
   columnFilters: ColumnFiltersState
+  columnSizing: ColumnSizingState
   sorting: SortingState
 }
 
@@ -32,10 +33,15 @@ export const useTableDataStore = create<TableDataStore>()(
               ps.tables[key].columnFilters = []
             }
           }
+          if (curVer < 4) {
+            for (const key in ps.tables) {
+              ps.tables[key].columnSizing = {}
+            }
+          }
         }
         return ps
       },
-      version: 3,
+      version: 4,
     },
   ),
 )
@@ -44,7 +50,7 @@ export const useTableData = (tableName: string) => useTableDataStore(useShallow(
 export const updateTableData = (tableName: string, data: Partial<TableData>) =>
   useTableDataStore.setState((e) => {
     if (!e.tables[tableName]) {
-      e.tables[tableName] = { globalFilter: '', columnFilters: [], sorting: [] } as TableData
+      e.tables[tableName] = initTableData()
     }
     return {
       tables: { ...e.tables, [tableName]: { ...e.tables[tableName], ...data } },
@@ -56,6 +62,10 @@ export const onGlobalFilterChange = (tableName: string) => (e: any) => {
 
 export const useColumnFilter = (tableName: string, columnId: string) =>
   useTableDataStore((e) => getColumnFilter(tableName, columnId, e))
+
+function initTableData(): TableData {
+  return { globalFilter: '', columnFilters: [], sorting: [], columnSizing: {} }
+}
 
 export const getColumnFilter = (tableName: string, columnId: string, e = useTableDataStore.getState()) => {
   // const e = useTableDataStore.getState()
@@ -72,7 +82,7 @@ export const getColumnFilter = (tableName: string, columnId: string, e = useTabl
 export const updateColumnFilter = (tableName: string, columnId: string, value: any) => {
   useTableDataStore.setState((e) => {
     if (!e.tables[tableName]) {
-      e.tables[tableName] = { globalFilter: '', columnFilters: [], sorting: [] } as TableData
+      e.tables[tableName] = initTableData()
     }
     const columnFilters = e.tables[tableName].columnFilters
     const index = columnFilters.findIndex((f) => f.id === columnId)
@@ -98,7 +108,7 @@ export const onColumnFiltersChange = (tableName: string) => (updater: Updater<Co
   if (typeof updater === 'function') {
     useTableDataStore.setState((e) => {
       if (!e.tables[tableName]) {
-        e.tables[tableName] = { globalFilter: '', columnFilters: [], sorting: [] } as TableData
+        e.tables[tableName] = initTableData()
       }
       return {
         tables: {
@@ -115,11 +125,32 @@ export const onColumnFiltersChange = (tableName: string) => (updater: Updater<Co
   }
 }
 
+export const onColumnSizingChange = (tableName: string) => (updater: Updater<ColumnSizingState>) => {
+  if (typeof updater === 'function') {
+    useTableDataStore.setState((e) => {
+      if (!e.tables[tableName]) {
+        e.tables[tableName] = initTableData()
+      }
+      return {
+        tables: {
+          ...e.tables,
+          [tableName]: {
+            ...e.tables[tableName],
+            columnSizing: updater(e.tables[tableName].columnSizing),
+          },
+        },
+      }
+    })
+  } else {
+    updateTableData(tableName, { columnSizing: updater })
+  }
+}
+
 export const onSortingChange = (tableName: string) => (updater: Updater<SortingState>) => {
   if (typeof updater === 'function') {
     useTableDataStore.setState((e) => {
       if (!e.tables[tableName]) {
-        e.tables[tableName] = { globalFilter: '', columnFilters: [], sorting: [] } as TableData
+        e.tables[tableName] = initTableData()
       }
       return {
         tables: {
