@@ -218,7 +218,7 @@ function RenderAsBytes({ value, displayAs, ref }: { value: Uint8Array; displayAs
     } else if (displayAs === 'utf8') {
       const textDecoder = new TextDecoder('utf-8')
       return textDecoder.decode(value)
-    } else if (displayAs === 'hex') {
+    } else if (typeof displayAs === 'undefined' || displayAs === 'hex') {
       return Array.from(value, (byte) => byte.toString(16).padStart(2, '0')).join('')
     }
   }, [value, displayAs])
@@ -298,6 +298,10 @@ export function RenderItem({
 
   if (typeof desc === 'number') {
     // Scalar type
+    if (desc === ScalarType.BYTES && !fieldPrefs?.displayAs) {
+      fieldPrefs = fieldPrefs || {}
+      fieldPrefs.displayAs = 'hex'
+    }
     if (fieldPrefs?.displayAs) {
       const da = fieldPrefs.displayAs
       if (typeof value === 'bigint' && (da === 'steamid.2' || da === 'steamid.3')) {
@@ -492,7 +496,7 @@ export function ProtoItem({
             {
               label: 'Hexadecimal',
               onClick: () => updateDisplayAs(fieldKey, 'hex'),
-              selected: fieldPrefs?.displayAs === 'hex',
+              selected: typeof fieldPrefs?.displayAs === 'undefined' || fieldPrefs?.displayAs === 'hex',
             },
           )
         }
