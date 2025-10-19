@@ -50,6 +50,7 @@ export interface WindowPropTypes extends React.PropsWithChildren {
   minHeight?: number
   draggable?: boolean
   resizable?: boolean
+  bodyClassName?: string
 }
 
 const MIN_HEIGHT = 100 // px
@@ -287,7 +288,10 @@ const WindowContent = React.memo<{
 )
 
 export function Window({ children, ...props }: WindowPropTypes) {
-  const portalNode = useMemo(() => createHtmlPortalNode({ attributes: { class: 'window-body' } }), [])
+  const portalNode = useMemo(
+    () => createHtmlPortalNode({ attributes: { class: clsx('window-body', props.bodyClassName) } }),
+    [props.bodyClassName],
+  )
   return (
     <>
       <WindowChrome {...props} portalNode={portalNode} />
