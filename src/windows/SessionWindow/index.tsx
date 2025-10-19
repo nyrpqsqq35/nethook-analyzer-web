@@ -84,7 +84,12 @@ function MessageTable({ session }: { session: NetHookSession }) {
               {
                 label: 'Open',
                 onClick: () => {
-                  console.log('meow', row.seq)
+                  createSingletonWindow(MessageWindow, {
+                    id: 'quick-message-window',
+                    props: {
+                      seq: row.seq,
+                    },
+                  })
                 },
               },
               {
