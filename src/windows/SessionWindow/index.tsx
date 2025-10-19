@@ -10,7 +10,9 @@ import GroupBox from '@/components/GroupBox'
 import { Checkbox, TextInput } from '@/components/Input'
 import { usePreferencesStore } from '@/stores/preferencesStore.ts'
 import { BlueFolderNetworkIcon } from '@/components/Icon/fugue.tsx'
-import { onGlobalFilterChange, useTableData } from '@/stores/useTableData.tsx'
+import { getColumnFilter, onGlobalFilterChange, updateColumnFilter, useTableData } from '@/stores/useTableData.tsx'
+import Button from '@/components/Button'
+import FiltersWindow from '@/windows/Filters'
 const messageColumns: ColumnDef<NetHookMessage>[] = [
   {
     header: 'Seq',
@@ -35,14 +37,16 @@ const messageColumns: ColumnDef<NetHookMessage>[] = [
     accessorKey: 'eMsgName',
     cell: (info) => <span className="gray">{info.getValue() as string}</span>,
     size: 400,
-    filterFn: 'fuzzy',
+    filterFn: 'special',
+    enableColumnFilter: true,
   },
   {
     header: 'Inner message',
     cell: (info) => <span className="gray">{info.getValue() as string}</span>,
     accessorKey: 'innerMsgName',
     size: 15000,
-    filterFn: 'fuzzy',
+    filterFn: 'special',
+    enableColumnFilter: true,
   },
 ]
 
@@ -106,13 +110,20 @@ function MessageTable({ session }: { session: NetHookSession }) {
               {
                 label: 'Hide message type',
                 onClick: () => {
-                  console.log('meow', row.seq)
+                  const filter = getColumnFilter('nethook-session-messages', 'eMsgName')
+                  const fvs = filter.split(',')
+                  fvs.unshift(`-${row.eMsgName}`)
+                  updateColumnFilter('nethook-session-messages', 'eMsgName', fvs.filter(Boolean).join(','))
                 },
               },
               {
                 label: 'Hide inner message',
+                visible: typeof row.innerMsgName !== 'undefined',
                 onClick: () => {
-                  console.log('meow', row.seq)
+                  const filter = getColumnFilter('nethook-session-messages', 'innerMsgName')
+                  const fvs = filter.split(',')
+                  fvs.unshift(`-${row.innerMsgName}`)
+                  updateColumnFilter('nethook-session-messages', 'innerMsgName', fvs.filter(Boolean).join(','))
                 },
               },
             ],
@@ -144,6 +155,15 @@ export function Preferences() {
         onChange={onGlobalFilterChange('nethook-session-messages')}
       />
       <div style={{ display: 'flex', flexDirection: 'row', gap: '8px', marginLeft: 'auto', alignItems: 'center' }}>
+        <Button
+          onClick={() => {
+            createSingletonWindow(FiltersWindow, {
+              id: 'nethook-session-filters',
+            })
+          }}
+        >
+          Filter prefs
+        </Button>
         <Checkbox
           name="hideDefaultFields"
           setChecked={(val) => {

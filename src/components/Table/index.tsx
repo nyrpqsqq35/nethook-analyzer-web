@@ -14,7 +14,7 @@ import { type CSSProperties, type MouseEventHandler, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { type ContextMenuSchema, showContextMenu } from '@/stores/useContextMenu.tsx'
 import { type RankingInfo, rankItem } from '@tanstack/match-sorter-utils'
-import { onGlobalFilterChange, onSortingChange, useTableData } from '@/stores/useTableData.tsx'
+import { onColumnFiltersChange, onGlobalFilterChange, onSortingChange, useTableData } from '@/stores/useTableData.tsx'
 import clsx from 'clsx'
 import style from './index.module.scss'
 export interface TableItemProps<T = any> {
@@ -136,10 +136,28 @@ const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
   return itemRank.passed
 }
 
+const specialFilter: FilterFn<any> = (row, columnId, filterVal) => {
+  const rowValue = row.getValue(columnId)
+  const filter = (typeof filterVal === 'string' ? filterVal : '').split(',')
+  for (const rule of filter) {
+    if (rule.startsWith('-')) {
+      if (rowValue === rule.substring(1)) {
+        return false
+      }
+    } else {
+      // if (rowValue.includes(rule)) {
+      //   return true
+      // }
+    }
+  }
+  return true
+}
+
 declare module '@tanstack/react-table' {
   //add fuzzy filter to the filterFns
   interface FilterFns {
     fuzzy: FilterFn<unknown>
+    special: FilterFn<unknown>
   }
   interface FilterMeta {
     itemRank: RankingInfo
@@ -165,14 +183,17 @@ export default function Table<T>({
     getFilteredRowModel: getFilteredRowModel(),
     filterFns: {
       fuzzy: fuzzyFilter,
+      special: specialFilter,
     },
     globalFilterFn: 'includesString',
     state: {
       globalFilter: tableData?.globalFilter ?? '',
+      columnFilters: tableData?.columnFilters ?? [],
       sorting: tableData?.sorting ?? [],
     },
     onGlobalFilterChange: onGlobalFilterChange(id),
     onSortingChange: onSortingChange(id),
+    onColumnFiltersChange: onColumnFiltersChange(id),
   })
 
   const tableContainerRef = useRef<HTMLDivElement>(null)

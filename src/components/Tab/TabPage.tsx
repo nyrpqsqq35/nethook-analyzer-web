@@ -5,7 +5,7 @@ export interface TabPagePropTypes extends React.PropsWithChildren {
   disabled?: boolean
   id: string
   label: string
-  style: CSSProperties
+  style?: CSSProperties
 }
 
 export function TabPage({ id, className, style, children }: TabPagePropTypes) {

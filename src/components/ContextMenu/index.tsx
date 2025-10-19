@@ -33,6 +33,8 @@ export function ContextMenu({ id }: ContextMenuPropTypes) {
       if (typeof item === 'number') return
       let nextIndex = index + 1
       if (index + 1 === items.length) nextIndex = index
+      const visible = typeof item === 'string' ? true : typeof item.visible === 'boolean' ? item.visible : true
+      if (!visible) return
       const nextItem = items[nextIndex]
       const label = typeof item === 'string' ? item : item.label
       const selected = typeof item === 'string' ? false : (item.selected ?? false)
