@@ -3,6 +3,7 @@ name: CI/CD
 on:
   push:
     branches: ['master']
+    paths: ['src/**', 'public/**', 'pnpm-lock.yaml', 'package.json', 'vite.config.ts', 'index.html', '.github/workflows/ci.yml']
   # Allow triggering manually from Actions tab
   workflow_dispatch:
 

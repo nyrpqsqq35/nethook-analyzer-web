@@ -12,7 +12,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "gen": "buf generate"
+    "gen": "./gen.sh"
   },
   "dependencies": {
     "7.css": "^0.21.1",
