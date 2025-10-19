@@ -72,7 +72,7 @@ function MessageTable({ session }: { session: NetHookSession }) {
       columns={messageColumns}
       virtualized
       itemProps={{
-        onClick: (row) => (e) => {
+        onMouseDown: (row) => (e) => {
           if (e.button === 0 /* left */) {
             createSingletonWindow(MessageWindow, {
               id: 'quick-message-window',

@@ -19,7 +19,7 @@ import clsx from 'clsx'
 import style from './index.module.scss'
 export interface TableItemProps<T = any> {
   contextMenu?: (row: T) => ContextMenuSchema | undefined
-  onClick?: (row: T) => MouseEventHandler<HTMLTableRowElement>
+  onMouseDown?: (row: T) => MouseEventHandler<HTMLTableRowElement>
 }
 
 export interface TablePropTypes<T = any> extends React.PropsWithChildren {
@@ -105,7 +105,7 @@ function VirtualTableBody<T>({
               }
               e.preventDefault()
             }}
-            onClick={itemProps?.onClick && row ? itemProps.onClick(row.original) : undefined}
+            onMouseDown={itemProps?.onMouseDown && row ? itemProps.onMouseDown(row.original) : undefined}
           >
             {row.getVisibleCells().map((cell) => (
               <td
