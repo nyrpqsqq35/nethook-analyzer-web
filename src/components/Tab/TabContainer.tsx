@@ -38,7 +38,11 @@ export function TabContainer({ className, label, children, style }: TabContainer
                 aria-controls={tab.id}
                 disabled={tab.disabled}
                 aria-selected={activeTab === i}
-                onClick={() => setActiveTab(i)}
+                onMouseDown={(e) => {
+                  if (e.button === 0 /* left */) {
+                    setActiveTab(i)
+                  }
+                }}
               >
                 {tab.label}
               </button>
