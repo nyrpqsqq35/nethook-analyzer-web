@@ -1,73 +1,33 @@
-# React + TypeScript + Vite
+# nethook-analyzer-web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Usage
+https://nyrpqsqq35.github.io/nethook-analyzer-web/
 
-Currently, two official plugins are available:
+Requires Chromium 134+ or another browser with File System Access/FileSystemObserver APIs available.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Features
+```
++ Works on non-Windows platforms
++ Open nethook2 session folder
++ Open individual messages (.bin) file
++ Hide message types
++ View multiple messages at once
++ Game Coordinator (GC) message decoding for CS2
+    - GC Shared Object (SO) decoding for CS2
++ Display as
+    - Display as preferences saved in local storage 
+    - Bytes
+        + TODO: Binary KeyValues (VDF)/LZMA
+        + Protobuf (select descriptor to decode with, TODO: decoding w/o descriptor) 
+        + ASCII
+        + UTF-8
+        + Hex
+    - Numeric
+        + SteamID64 -> SteamID2/SteamID3
+        + GlobalID
+        + Chars/inversed chars
+        + TODO: Date/Time
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Screenshot
+![Screenshot](.github/Screenshot%202025-10-20%20at%201.38.47%E2%80%AFAM.png)
