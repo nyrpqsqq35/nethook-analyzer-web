@@ -280,6 +280,28 @@ export function RenderItem({
                   // yea
                 },
               },
+              {
+                label: 'Copy as C++ array',
+                visible: desc === ScalarType.BYTES,
+                onClick: () => {
+                  const v = value as Uint8Array
+                  // Webstorm gets furious if those characters arent escaped
+                  // eslint-disable-next-line no-useless-escape
+                  let str = `constexpr std::array\<uint8_t, ${v.byteLength}\> ${fieldName} = \{`
+
+                  for (let i = 0; i < v.byteLength; ++i) {
+                    if (i % 13 === 0) {
+                      str += '\n  '
+                    }
+                    str += `0x${v[i].toString(16).padStart(2, '0')}, `
+                  }
+                  if (!str.endsWith('\n')) {
+                    str += '\n'
+                  }
+                  str += '};'
+                  void copyToClipboard(str)
+                },
+              },
             ],
           },
           ...contextMenu.items,
