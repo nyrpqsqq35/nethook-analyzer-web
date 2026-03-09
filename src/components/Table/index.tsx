@@ -10,7 +10,7 @@ import {
   getFilteredRowModel,
   getSortedRowModel,
 } from '@tanstack/react-table'
-import { type CSSProperties, type MouseEventHandler, useRef } from 'react'
+import { type CSSProperties, type MouseEventHandler, useEffect, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { type ContextMenuSchema, showContextMenu } from '@/stores/useContextMenu.tsx'
 import { type RankingInfo, rankItem } from '@tanstack/match-sorter-utils'
@@ -19,6 +19,7 @@ import {
   onColumnSizingChange,
   onGlobalFilterChange,
   onSortingChange,
+  updateTableData,
   useTableData,
 } from '@/stores/useTableData.tsx'
 import clsx from 'clsx'
@@ -179,7 +180,7 @@ export default function Table<T>({
   itemProps,
 }: TablePropTypes<T>) {
   const tableData = useTableData(id)
-  console.log('sorting', tableData?.sorting ?? [])
+  console.log('sorting', tableData)
   const table = useReactTable({
     data,
     columns,
@@ -205,6 +206,17 @@ export default function Table<T>({
   })
 
   const tableContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!tableData) {
+      updateTableData(id, {
+        globalFilter: '',
+        columnFilters: [],
+        columnSizing: {},
+        sorting: [],
+      })
+    }
+  }, [id, tableData])
 
   return (
     <div
