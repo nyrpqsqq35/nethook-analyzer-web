@@ -1,3 +1,4 @@
+import type { ParsedMessage } from '@/stores/sessionStore.ts'
 import { file_clientmetrics } from './steam/clientmetrics_pb.ts'
 import { file_content_manifest } from './steam/content_manifest_pb.ts'
 import { file_contenthubs } from './steam/contenthubs_pb.ts'
@@ -258,19 +259,66 @@ eMsgToProto.set(EMsg.k_EMsgAMGameServerUpdate, CMsgGameServerDataSchema)
 eMsgToProto.set(EMsg.k_EMsgClientPlayingSessionState, CMsgClientPlayingSessionStateSchema)
 eMsgToProto.set(EMsg.k_EMsgClientNetworkingCertRequestResponse, CMsgClientNetworkingCertReplySchema)
 
-export function getProtoFromEMsg(eMsg: number, name?: string): DescMessage | undefined {
+const unifiedMsgToProto = new Map<string, DescMessage>()
+
+export function getProtoByLowerName(lowerName: string) {
+  for (const desc of steamProtoDescs) {
+    const locMsgDesc = desc.messages.find((a) => a.name.toLowerCase().endsWith(lowerName))
+    if (locMsgDesc) {
+      return locMsgDesc
+    }
+  }
+  return undefined
+}
+
+export function getProtoFromEMsg(eMsg: number, parsed: ParsedMessage, name?: string): DescMessage | undefined {
+  if (
+    parsed.isProtobuf &&
+    (eMsg === EMsg.k_EMsgServiceMethod ||
+      eMsg === EMsg.k_EMsgServiceMethodSendToClient ||
+      eMsg === EMsg.k_EMsgServiceMethodCallFromClient ||
+      eMsg === EMsg.k_EMsgServiceMethodCallFromClientNonAuthed ||
+      eMsg === EMsg.k_EMsgServiceMethodResponse)
+  ) {
+    const isResponse = eMsg === EMsg.k_EMsgServiceMethodResponse
+    const name = parsed.header.targetJobName
+    const cacheKey = `${name}_${isResponse}`
+    const cached = unifiedMsgToProto.get(cacheKey)
+    if (!cached) {
+      let msgDesc: DescMessage | undefined
+      if (name.includes('.')) {
+        const [serviceName, serviceMethodWithVersion] = name.split('.', 2)
+        const [serviceMethod, _serviceMethodVersion] = serviceMethodWithVersion.split('#', 2)
+        // console.log('Searching for', serviceName, serviceMethod, serviceMethodVersion)
+        for (const desc of steamProtoDescs) {
+          const locServiceDesc = desc.services.find((a) => a.name === serviceName)
+          if (locServiceDesc) {
+            const method = locServiceDesc.methods.find((a) => a.name === serviceMethod)
+            if (method) {
+              msgDesc = isResponse ? method.output : method.input
+              break
+            }
+          }
+        }
+      } else {
+        msgDesc = getProtoByLowerName(name.toLowerCase())
+      }
+
+      if (msgDesc) {
+        unifiedMsgToProto.set(cacheKey, msgDesc)
+        return msgDesc
+      } else {
+        console.log('couldnt find msg desc for', name)
+        return undefined
+      }
+    }
+    return cached
+  }
   const cached = eMsgToProto.get(eMsg)
   if (!cached) {
     if (!name) return undefined
     const lowerName = name.toLowerCase()
-    let msgDesc: DescMessage | undefined = undefined
-    for (const desc of steamProtoDescs) {
-      const locMsgDesc = desc.messages.find((a) => a.name.toLowerCase().endsWith(lowerName))
-      if (locMsgDesc) {
-        msgDesc = locMsgDesc
-        break
-      }
-    }
+    const msgDesc: DescMessage | undefined = getProtoByLowerName(lowerName)
 
     if (msgDesc) {
       eMsgToProto.set(eMsg, msgDesc)

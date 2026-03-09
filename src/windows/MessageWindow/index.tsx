@@ -36,7 +36,7 @@ function StandardHeader({ parsed }: { parsed: ParsedMessageIsntProtobuf }) {
 function Yeah({ msg }: { msg: NetHookMessage }) {
   console.log('Yeah rerender')
 
-  const desc = useMemo(() => getProtoFromEMsg(msg.eMsg, msg.eMsgName), [msg.eMsg, msg.eMsgName])
+  const desc = useMemo(() => getProtoFromEMsg(msg.eMsg, msg.parsed, msg.eMsgName), [msg.eMsg, msg.parsed, msg.eMsgName])
   return (
     <>
       <ul

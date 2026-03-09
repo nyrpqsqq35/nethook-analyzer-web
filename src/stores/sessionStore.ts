@@ -297,8 +297,10 @@ export async function parseFile(file: FileSystemFileHandle): Promise<NetHookMess
   const fo = await file.getFile()
   const ab = await fo.arrayBuffer()
   const parsed = parseMessageHeader(ab)
-  const desc = getProtoFromEMsg(parts.eMsg, parts.eMsgName)
+  const desc = getProtoFromEMsg(parts.eMsg, parsed, parts.eMsgName)
   const body = parseMessageBody(desc, new Uint8Array(ab.slice(parsed.headerSize)))
+
+  console.log(parts.eMsg, parts.eMsgName, desc, body)
 
   const msg: NetHookMessage = { ...parts, file, parsed, body }
   // console.log('Parsed', parsed, body)
@@ -314,6 +316,16 @@ export async function parseFile(file: FileSystemFileHandle): Promise<NetHookMess
         // gcEMsgToName()
       }
     }
+  }
+  if (
+    parsed.isProtobuf &&
+    (parsed.eMsg === EMsg.k_EMsgServiceMethod ||
+      parsed.eMsg === EMsg.k_EMsgServiceMethodSendToClient ||
+      parsed.eMsg === EMsg.k_EMsgServiceMethodCallFromClient ||
+      parsed.eMsg === EMsg.k_EMsgServiceMethodCallFromClientNonAuthed ||
+      parsed.eMsg === EMsg.k_EMsgServiceMethodResponse)
+  ) {
+    msg.innerMsgName = desc?.name ?? parsed.header.targetJobName
   }
   return msg
 }
