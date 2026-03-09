@@ -180,7 +180,7 @@ export default function Table<T>({
   itemProps,
 }: TablePropTypes<T>) {
   const tableData = useTableData(id)
-  console.log('sorting', tableData)
+  // console.log('sorting', tableData)
   const table = useReactTable({
     data,
     columns,

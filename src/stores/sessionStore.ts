@@ -300,8 +300,6 @@ export async function parseFile(file: FileSystemFileHandle): Promise<NetHookMess
   const desc = getProtoFromEMsg(parts.eMsg, parsed, parts.eMsgName)
   const body = parseMessageBody(desc, new Uint8Array(ab.slice(parsed.headerSize)))
 
-  console.log(parts.eMsg, parts.eMsgName, desc, body)
-
   const msg: NetHookMessage = { ...parts, file, parsed, body }
   // console.log('Parsed', parsed, body)
 
